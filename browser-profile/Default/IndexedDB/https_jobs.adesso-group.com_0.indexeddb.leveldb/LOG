@@ -1,0 +1,20 @@
+2026/04/22-21:04:44.790 5c54 Creating DB c:\Users\apasc\Downloads\JobHunter-AI_4\jobhunter\browser-profile\Default\IndexedDB\https_jobs.adesso-group.com_0.indexeddb.leveldb since it was missing.
+2026/04/22-21:04:44.796 5c54 Reusing MANIFEST c:\Users\apasc\Downloads\JobHunter-AI_4\jobhunter\browser-profile\Default\IndexedDB\https_jobs.adesso-group.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/04/22-21:04:44.820 5ce4 Level-0 table #5: started
+2026/04/22-21:04:44.828 5ce4 Level-0 table #5: 1286 bytes OK
+2026/04/22-21:04:44.829 5ce4 Delete type=0 #3
+2026/04/22-21:04:44.830 2aa0 Manual compaction at level-0 from '\x00\x01\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x02\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/04/22-21:04:55.350 5f0c Level-0 table #7: started
+2026/04/22-21:04:55.360 5f0c Level-0 table #7: 2032 bytes OK
+2026/04/22-21:04:55.362 5f0c Delete type=0 #4
+2026/04/22-21:04:55.363 5ce4 Manual compaction at level-0 from '\x00\x04\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x05\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/04/22-21:04:58.674 2aa0 Level-0 table #9: started
+2026/04/22-21:04:58.681 2aa0 Level-0 table #9: 958 bytes OK
+2026/04/22-21:04:58.683 2aa0 Delete type=0 #6
+2026/04/22-21:04:58.683 50e0 Manual compaction at level-0 from '\x00\x05\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at '\x00\x05\x00\x00\x05' @ 165 : 1
+2026/04/22-21:04:58.683 50e0 Compacting 1@0 + 1@1 files
+2026/04/22-21:04:58.692 50e0 Generated table #10@0: 57 keys, 1602 bytes
+2026/04/22-21:04:58.692 50e0 Compacted 1@0 + 1@1 files => 1602 bytes
+2026/04/22-21:04:58.693 50e0 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/22-21:04:58.694 50e0 Delete type=2 #9
+2026/04/22-21:04:58.694 4ec Manual compaction at level-0 from '\x00\x05\x00\x00\x05' @ 165 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at (end)
