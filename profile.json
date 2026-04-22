@@ -1,0 +1,15 @@
+{
+  "name": "Alessio Pascu-Ankenbrand",
+  "email": "alessiopascu@icloud.com",
+  "phone": "+4915568238703",
+  "experience": "1,5 Jahre React/NextJS mit TypeScript, Tailwinds",
+  "bio": "hochmotiviert, schnelllernend, teamfähig, extrem zuverlässig..",
+  "location": "Schweinfurt",
+  "skills": "",
+  "cvSkills": [],
+  "want_remote": true,
+  "want_local": true,
+  "want_car": true,
+  "radius_km": 10,
+  "radius_car_km": 130
+}

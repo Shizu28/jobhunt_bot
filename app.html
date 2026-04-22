@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="JobHunter"/>
+<meta name="theme-color" content="#07070f"/>
+<title>JobHunter AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#07070f;--s1:#0f0f1a;--s2:#161624;--bd:rgba(255,255,255,.07);--a:#5eead4;--a2:#f472b6;--a3:#fbbf24;--a4:#818cf8;--tx:#e2e8f0;--mu:#475569;--mu2:#64748b}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'DM Mono',monospace;color:var(--tx);display:flex;flex-direction:column;height:100dvh}
+.screen{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 130px}
+.screen.active{display:block}
+/* header */
+.hdr{padding:calc(env(safe-area-inset-top)+14px) 20px 14px;background:rgba(7,7,15,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);flex-shrink:0;z-index:50}
+.hrow{display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px}
+.lic{width:34px;height:34px;background:linear-gradient(135deg,#5eead4,#f472b6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.ltx{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.03em}
+.ltx span{color:var(--a)}
+.badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);padding:4px 10px;border-radius:20px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--a);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.pbar{height:3px;background:var(--s2);overflow:hidden;margin-top:8px}
+.pfill{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--a2));transition:width .3s}
+/* bottom nav */
+.bnav{padding:10px 6px calc(env(safe-area-inset-bottom)+10px);background:rgba(7,7,15,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bd);display:flex;flex-shrink:0;z-index:50}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--mu);font-family:'DM Mono',monospace}
+.nb.active{color:var(--a)}.nb .ni{font-size:20px}.nb .nl{font-size:9px;letter-spacing:.04em}
+/* cards */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+/* stats */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:16px 0 4px}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:12px 10px;text-align:center}
+.sn{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1}
+.sl{font-size:9px;color:var(--mu2);margin-top:3px}
+/* job tabs */
+.jtabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin:16px 0 12px}
+.jtab{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:9px 4px;font-size:11px;font-family:'DM Mono',monospace;color:var(--mu2);cursor:pointer;text-align:center;transition:color .15s}
+.jtab.active{color:var(--a);border-bottom-color:var(--a)}
+/* tags */
+.tag{display:inline-block;font-size:10px;padding:3px 8px;border-radius:5px;font-family:'DM Mono',monospace}
+.ta{background:rgba(94,234,212,.12);color:var(--a)}.tb{background:rgba(244,114,182,.12);color:var(--a2)}
+.tc{background:rgba(251,191,36,.12);color:var(--a3)}.td{background:rgba(255,255,255,.06);color:var(--mu2)}
+.te{background:rgba(129,140,248,.12);color:var(--a4)}
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:20px}
+.pn{background:rgba(94,234,212,.12);color:var(--a)}.pa{background:rgba(99,102,241,.12);color:#a5b4fc}
+.pi{background:rgba(251,191,36,.12);color:var(--a3)}
+/* buttons */
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:center;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.98);opacity:.85}
+.btnp{background:linear-gradient(135deg,#5eead4,#f472b6);color:#07070f}
+.btns{background:var(--s2);border:1px solid var(--bd);color:var(--tx)}
+.btng{background:transparent;border:1px solid var(--bd);color:var(--mu2)}
+/* inputs */
+.lbl{font-size:10px;color:var(--mu2);margin-bottom:5px;display:block;letter-spacing:.06em;text-transform:uppercase}
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;color:var(--tx);font-size:13px;font-family:'DM Mono',monospace;-webkit-appearance:none;transition:border-color .15s}
+.inp:focus{outline:none;border-color:var(--a)}
+textarea.inp{resize:vertical;min-height:80px;line-height:1.6}
+/* toggle */
+.trow{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bd)}
+.trow:last-child{border-bottom:none}
+.tog{width:40px;height:22px;border-radius:11px;background:var(--s2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:1px solid var(--bd)}
+.tog.on{background:var(--a);border-color:var(--a)}
+.tth{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+.tog.on .tth{left:20px}
+/* section title */
+.stitle{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu2);margin:20px 0 10px}
+/* letter output */
+.cursor::after{content:'▊';animation:blink .8s infinite;color:var(--a)}
+#lout{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px;font-size:12px;line-height:1.8;min-height:220px;white-space:pre-wrap;word-break:break-word;width:100%;box-sizing:border-box;resize:vertical;color:var(--fg);font-family:'DM Mono',monospace;outline:none}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.su{animation:slideUp .25s ease-out}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--s2);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--a);cursor:pointer;border:2px solid var(--bg)}
+/* skill chips */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;transition:opacity .15s}
+.chip-cv{background:rgba(94,234,212,.12);color:var(--a);border:1px solid rgba(94,234,212,.2)}
+.chip-manual{background:rgba(244,114,182,.1);color:var(--a2);border:1px solid rgba(244,114,182,.2)}
+/* cv progress */
+.cvprog{display:none;margin-top:8px}
+.cvprog-bar{height:3px;background:var(--s2);border-radius:2px;overflow:hidden}
+.cvprog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--a2));transition:width .3s}
+/* doc list */
+.docitem{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid rgba(244,114,182,.15);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+/* keyword tags */
+.kwtag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:6px;background:rgba(129,140,248,.12);color:var(--a4);border:1px solid rgba(129,140,248,.2);margin:3px}
+/* conn banner */
+.conn{margin:12px 0;padding:12px 14px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;font-size:11px;color:var(--a3);line-height:1.6;display:none}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hrow">
+    <div class="logo"><div class="lic">⚡</div><div class="ltx">Job<span>Hunter</span></div></div>
+    <div class="badge"><div class="dot" id="dot"></div><span id="scanTxt">Verbinde...</span></div>
+  </div>
+  <div class="pbar" id="pbar" style="display:none"><div class="pfill" id="pfill"></div></div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div class="screen active su" id="screen-dashboard">
+  <div class="conn" id="connBanner">⚠️ Server nicht erreichbar · <code>node server.js</code> auf dem PC starten · beide Geräte ins gleiche WLAN</div>
+  <div class="sgrid">
+    <div class="sc"><div class="sn" style="color:var(--a)" id="stN">–</div><div class="sl">Neu</div></div>
+    <div class="sc"><div class="sn" style="color:var(--a4)" id="stA">–</div><div class="sl">Beworben</div></div>
+    <div class="sc"><div class="sn" style="color:var(--a2)" id="stT">–</div><div class="sl">Gesamt</div></div>
+    <div class="sc"><div class="sn" style="color:var(--a3)" id="stS">–</div><div class="sl">Scans</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+    <div class="stitle" style="margin:0">Stellen</div>
+    <button onclick="triggerScan()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:8px;padding:6px 13px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">▶ Jetzt scannen</button>
+  </div>
+  <!-- Job tabs -->
+  <div class="jtabs">
+    <button class="jtab active" onclick="setJobTab('all',this)">Alle</button>
+    <button class="jtab" onclick="setJobTab('remote',this)">🌐 Remote</button>
+    <button class="jtab" onclick="setJobTab('local',this)">📍 Lokal</button>
+    <button class="jtab" onclick="setJobTab('car',this)">🚗 Dienstwagen</button>
+    <button class="jtab" onclick="setJobTab('applied',this)" id="tabApplied">📬 Beworben</button>
+  </div>
+  <div id="jobList"><div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px">Lade Jobs...</div></div>
+</div>
+
+<!-- ── ANSCHREIBEN ── -->
+<div class="screen su" id="screen-letter">
+  <div class="stitle">Anschreiben</div>
+
+  <!-- URL Generator -->
+  <div class="card" style="border-color:rgba(94,234,212,.2)">
+    <div style="font-size:11px;color:var(--a);letter-spacing:.06em;margin-bottom:8px">🔗 STELLE AUS LINK GENERIEREN</div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="letterUrl" placeholder="https://jobs.firma.de/stelle/..." style="flex:1;font-size:12px;padding:10px 12px" onkeydown="if(event.key==='Enter')generateFromUrl()"/>
+      <button onclick="generateFromUrl()" id="letterUrlBtn" style="background:linear-gradient(135deg,rgba(94,234,212,.8),rgba(244,114,182,.8));border:none;border-radius:10px;padding:10px 16px;color:#07070f;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;font-weight:700;white-space:nowrap">✍️ Erstellen</button>
+    </div>
+    <div id="letterUrlStatus" style="display:none;font-size:11px;color:var(--mu2);margin-top:8px;line-height:1.6"></div>
+  </div>
+
+  <!-- Job info card (shown after generation or when coming from job list) -->
+  <div class="card" id="ljCard" style="display:none;border-color:rgba(94,234,212,.25)">
+    <div style="font-size:10px;color:var(--a);margin-bottom:6px;letter-spacing:.06em">STELLE</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px" id="ljTitle">–</div>
+    <div style="font-size:11px;color:var(--mu2);margin-top:3px" id="ljComp">–</div>
+    <div id="ljTags" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:5px"></div>
+  </div>
+  <div id="noJob" class="card" style="text-align:center;padding:24px 16px;color:var(--mu)">
+    <div style="font-size:28px;margin-bottom:8px">✍️</div>
+    <div style="font-size:12px;line-height:1.6">Link einfügen &amp; generieren — oder im Dashboard eine Stelle → <strong>Anschreiben</strong></div>
+  </div>
+  <div id="lsec" style="display:none">
+    <textarea id="lout" class="cursor" spellcheck="false"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btnp" style="flex:2;font-size:12px" onclick="applyNow()">🚀 Jetzt bewerben</button>
+      <button class="btn btns" style="flex:1;font-size:12px" onclick="regenLetter()">↻ Neu</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btng" style="flex:1;font-size:11px" onclick="copyLetter()">📋 Kopieren</button>
+      <button class="btn btng" style="flex:1;font-size:11px" onclick="downloadLetterPdf()" id="dlPdfBtn">📄 PDF laden</button>
+      <button class="btn btng" style="flex:1;font-size:11px" onclick="downloadLetter()">📥 .txt laden</button>
+    </div>
+    <button class="btn btng" style="margin-top:8px;font-size:12px" onclick="markAppliedCurrent()">✓ Als beworben markieren</button>
+  </div>
+</div>
+
+<!-- ── PROFIL ── -->
+<div class="screen su" id="screen-profile">
+  <div class="stitle">Persönliche Daten</div>
+  <div class="card">
+    <div style="margin-bottom:14px"><label class="lbl">Name</label><input class="inp" id="pName" placeholder="Max Mustermann"/></div>
+    <div style="margin-bottom:14px"><label class="lbl">E-Mail</label><input class="inp" type="email" id="pEmail" placeholder="max@email.de"/></div>
+    <div style="margin-bottom:14px"><label class="lbl">Telefon</label><input class="inp" type="tel" id="pPhone" placeholder="+49 9721..."/></div>
+    <div style="margin-bottom:14px"><label class="lbl">Berufserfahrung</label><input class="inp" id="pExp" placeholder="Quereinsteiger, 1–2 Jahre..."/></div>
+    <div><label class="lbl">Kurzvorstellung</label><textarea class="inp" id="pBio" placeholder="Ich bin ein motivierter Entwickler..."></textarea></div>
+  </div>
+
+  <!-- SKILLS -->
+  <div class="stitle">Skills</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">
+      📄 <span style="color:var(--a)">Türkis</span> = aus Lebenslauf · ✏️ <span style="color:var(--a2)">Rosa</span> = manuell · Tippen zum Entfernen
+    </div>
+    <div id="skillChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;margin-bottom:12px">
+      <span style="font-size:11px;color:var(--mu);font-style:italic" id="skillPh">Noch keine Skills – Lebenslauf hochladen oder manuell eingeben</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="skillIn" placeholder="Skill hinzufügen..." style="flex:1;padding:9px 12px;font-size:12px" onkeydown="if(event.key==='Enter')addSkill()"/>
+      <button onclick="addSkill()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:10px;padding:9px 14px;color:var(--a);font-size:18px;cursor:pointer">+</button>
+    </div>
+  </div>
+
+  <!-- DOKUMENTE -->
+  <div class="stitle">Dokumente</div>
+  <div class="card">
+    <!-- CV with AI analysis -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--mu2)">📄 Lebenslauf (PDF)</span>
+        <span id="cvStatus" style="font-size:10px;color:var(--a);display:none">Analysiere...</span>
+      </div>
+      <label style="display:block;cursor:pointer">
+        <div id="cvLabel" style="background:var(--s2);border:1px dashed rgba(94,234,212,.3);border-radius:10px;padding:16px;text-align:center;font-size:12px;color:var(--mu2)">
+          <div style="font-size:24px;margin-bottom:4px">📄</div>
+          <div>PDF hochladen</div>
+          <div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills werden automatisch erkannt</div>
+        </div>
+        <input type="file" accept=".pdf" style="display:none" id="cvInput" onchange="handleCV(this)"/>
+      </label>
+      <div class="cvprog" id="cvProg">
+        <div style="font-size:10px;color:var(--mu2);margin-bottom:4px" id="cvProgTxt">Analysiere...</div>
+        <div class="cvprog-bar"><div class="cvprog-fill" id="cvProgFill"></div></div>
+      </div>
+    </div>
+    <!-- Multi-document upload -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--mu2)">📜 Zeugnisse & Zertifikate</span>
+        <label style="display:flex;align-items:center;gap:5px;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:11px;color:var(--a2)">
+          + Hinzufügen
+          <input type="file" accept=".pdf,.doc,.docx,.jpg,.png" multiple style="display:none" onchange="handleDocs(this)"/>
+        </label>
+      </div>
+      <div id="docList">
+        <div style="font-size:11px;color:var(--mu);text-align:center;padding:12px;background:var(--s2);border-radius:8px;border:1px dashed rgba(255,255,255,.06)" id="docHint">
+          Noch keine Dokumente · z.B. Arbeitszeugnis, Bachelorzeugnis, Abizeugnis, Zertifikate
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stitle">Job-Präferenzen</div>
+  <div class="card">
+    <div class="trow"><div><div style="font-size:13px">🌐 Remote-Stellen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Deutschlandweit</div></div><div class="tog on" id="togRemote" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">📍 Lokale Stellen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Im eingestellten Radius</div></div><div class="tog on" id="togLocal" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">🚗 Stellen mit Dienstwagen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Größerer Umkreis erlaubt</div></div><div class="tog on" id="togCar" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div style="padding-top:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--mu2)">Radius ohne Auto</span><span style="font-size:13px;color:var(--a)" id="distLbl">10 km</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" min="1" max="250" value="10" id="distSlider" style="flex:1" oninput="syncRadius('dist',this.value)"/>
+        <input type="number" min="1" max="500" value="10" id="distInput" class="inp" style="width:68px;padding:8px 6px;text-align:center;font-size:13px" oninput="syncRadius('dist',this.value)"/>
+      </div>
+    </div>
+    <div style="padding-top:12px;border-top:1px solid var(--bd);margin-top:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--mu2)">Radius mit Dienstwagen</span><span style="font-size:13px;color:var(--a3)" id="carDistLbl">50 km</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" min="10" max="300" value="50" id="carDistSlider" style="flex:1;accent-color:var(--a3)" oninput="syncRadius('carDist',this.value)"/>
+        <input type="number" min="1" max="600" value="50" id="carDistInput" class="inp" style="width:68px;padding:8px 6px;text-align:center;font-size:13px" oninput="syncRadius('carDist',this.value)"/>
+      </div>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">
+      <label class="lbl">Heimatort</label>
+      <input class="inp" id="pLocation" placeholder="Schweinfurt" style="font-size:12px"/>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">
+      <label class="lbl">📎 Dokumente (Lebenslauf, Zertifikate...)</label>
+      <div id="fileList" style="margin-bottom:8px;min-height:10px"></div>
+      <label style="display:block;background:rgba(94,234,212,.07);border:1.5px dashed rgba(94,234,212,.3);border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:var(--a);transition:.2s" onmouseover="this.style.background='rgba(94,234,212,.13)'" onmouseout="this.style.background='rgba(94,234,212,.07)'">
+        + PDF / Word hochladen (Lebenslauf, Zertifikat...)
+        <input type="file" accept=".pdf,.doc,.docx" style="display:none" onchange="uploadFile(this)">
+      </label>
+    </div>
+  </div>
+  <button class="btn btnp" style="margin-top:4px" onclick="saveProfile()">💾 Profil & Präferenzen speichern</button>
+  <button onclick="browserSetup()" style="width:100%;margin-top:8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.3);border-radius:12px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+    🌐 Browser einrichten (einmalig einloggen)
+  </button>
+  <div id="browserSetupHint" style="display:none;font-size:10px;color:var(--mu2);text-align:center;margin-top:6px;line-height:1.7;padding:0 4px">
+    Browser ist offen · Bei LinkedIn, Xing, StepStone &amp; Co. einloggen<br>danach Browser schließen · Logins bleiben dauerhaft gespeichert ✓
+  </div>
+</div>
+
+<!-- ── EINSTELLUNGEN ── -->
+<div class="screen su" id="screen-settings">
+  <!-- Search keywords -->
+  <div class="stitle">Suchbegriffe</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">Tippen zum Entfernen · Unten neue hinzufügen</div>
+    <div id="kwList" style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="kwIn" placeholder="z.B. SAP ABAP Junior" style="flex:1;padding:9px 12px;font-size:12px" onkeydown="if(event.key==='Enter')addKw()"/>
+      <button onclick="addKw()" style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:9px 14px;color:var(--a4);font-size:18px;cursor:pointer">+</button>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:var(--mu2)">Vorschläge:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px" id="kwSuggestions"></div>
+  </div>
+
+  <!-- Custom sources -->
+  <div class="stitle">Weitere Quellen</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">Eigene Jobseiten hinzufügen (werden beim nächsten Scan gecheckt)</div>
+    <div id="srcList" style="margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input class="inp" id="srcName" placeholder="Name (z.B. Firma XY)" style="flex:1;padding:9px 12px;font-size:12px"/>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="srcUrl" placeholder="https://firma.de/jobs" style="flex:1;padding:9px 12px;font-size:12px"/>
+      <button onclick="addSource()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:10px;padding:9px 14px;color:var(--a);font-size:18px;cursor:pointer">+</button>
+    </div>
+  </div>
+
+  <!-- Standard sources -->
+  <div class="stitle">Standard-Quellen</div>
+  <div class="card" id="stdSources">
+    <div class="trow"><div style="font-size:13px">🏢 Arbeitsagentur</div><div class="tog on" id="srcAA" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div style="font-size:13px">🔍 Indeed</div><div class="tog on" id="srcIn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div style="font-size:13px">📋 StepStone</div><div class="tog on" id="srcSS" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">💼 LinkedIn</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Öffentliche Stellenanzeigen</div></div><div class="tog" id="srcLI" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">🔷 Xing</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DACH-Fokus</div></div><div class="tog" id="srcXi" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">💻 Heise Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">IT-Fachkräfte · Deutschland</div></div><div class="tog on" id="srcHe" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">🔎 Google Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Suche nach Stellenanzeigen</div></div><div class="tog on" id="srcGo" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+  </div>
+
+  <!-- API & Interval -->
+  <div class="stitle">KI-Modus</div>
+  <div class="card">
+    <!-- Mode toggle -->
+    <div class="trow" style="padding-bottom:14px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px">KI-Anbieter</div>
+        <div style="font-size:10px;color:var(--mu2);margin-top:3px" id="aiModeLabel">Anthropic API (Cloud)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:var(--mu2)">Lokal</span>
+        <div class="tog" id="togAI" onclick="toggleAIMode()"><div class="tth"></div></div>
+        <span style="font-size:10px;color:var(--mu2)">Cloud</span>
+      </div>
+    </div>
+
+    <!-- Anthropic section -->
+    <div id="anthropicSec">
+      <label class="lbl">Anthropic API Key</label>
+      <input class="inp" type="password" id="apiKey" placeholder="sk-ant-api03-..." style="margin-bottom:10px"/>
+      <div style="font-size:10px;color:var(--mu);margin-bottom:10px">Haiku: ~0,05 Cent/Anschreiben · platform.anthropic.com</div>
+      <button onclick="testAnthropicKey()" style="width:100%;background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.25);border-radius:9px;padding:9px;color:var(--a2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🔑 API Key testen</button>
+      <div id="anthropicTestResult" style="display:none;margin-top:8px;padding:9px 12px;border-radius:9px;font-size:11px;line-height:1.6"></div>
+    </div>
+
+    <!-- Ollama section -->
+    <div id="ollamaSec" style="display:none">
+      <div style="margin-bottom:10px">
+        <label class="lbl">Ollama Modell</label>
+        <select class="inp" id="ollamaModel" style="cursor:pointer">
+          <option value="qwen2.5:32b">Qwen2.5 32B (alternativ)</option>
+          <option value="llama3.1:70b-instruct-q4_K_M">Llama 3.1 70B Q4 ⭐ (dein Modell)</option>
+          <option value="qwen2.5:14b">Qwen2.5 14B (schneller, etwas schwächer)</option>
+          <option value="mistral:7b">Mistral 7B (sehr schnell, okay für Deutsch)</option>
+          <option value="custom">Eigenes Modell...</option>
+        </select>
+        <input class="inp" id="ollamaModelCustom" placeholder="z.B. llama3.2:latest" style="display:none;margin-top:6px;font-size:12px"/>
+      </div>
+      <div id="ollamaStatus" style="padding:10px 12px;background:var(--s2);border-radius:9px;font-size:11px;line-height:1.7;color:var(--mu2)">
+        Prüfe Ollama...
+      </div>
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.15);border-radius:9px;font-size:11px;line-height:1.7;color:var(--mu2)">
+        <strong style="color:var(--a4)">Setup (einmalig):</strong><br/>
+        1. <a href="https://ollama.com" target="_blank" style="color:var(--a)">ollama.com</a> → Download → installieren<br/>
+        2. CMD öffnen:<br/>
+        <code style="display:block;margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.3);border-radius:6px;color:var(--a4)">ollama pull qwen2.5:32b</code>
+        <span style="color:var(--mu);font-size:10px">(~19 GB Download, einmalig)</span><br/>
+        3. Ollama läuft dann automatisch im Hintergrund
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--mu)">⚠️ Bei gescannten PDFs (Bilder) können Skills ggf. nicht erkannt werden → dann manuell eintragen</div>
+    </div>
+  </div>
+
+  <div class="stitle">Scan-Intervall</div>
+  <div class="card">
+    <div id="ivBtns" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- Email / SMTP -->
+  <div class="stitle">E-Mail Bewerbung</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:12px;line-height:1.7">Wenn eine Stelle eine E-Mail-Adresse enthält, wird die Bewerbung direkt gesendet. Ohne SMTP: Anschreiben wird kopiert + Stelle geöffnet.</div>
+    <label class="lbl">Deine E-Mail (für Bestätigungen)</label>
+    <input class="inp" id="userEmail" placeholder="dein@email.de" style="margin-bottom:10px"/>
+    <label class="lbl">SMTP-Preset</label>
+    <select class="inp" id="smtpPreset" onchange="applySmtpPreset()" style="margin-bottom:8px;cursor:pointer">
+      <option value="">Manuell...</option>
+      <option value="gmail">Gmail (smtp.gmail.com : 587)</option>
+      <option value="outlook">Outlook / Hotmail (smtp.office365.com : 587)</option>
+      <option value="web.de">Web.de (smtp.web.de : 587)</option>
+      <option value="gmx">GMX (mail.gmx.net : 587)</option>
+      <option value="ionos">IONOS / 1&1 (smtp.ionos.de : 587)</option>
+    </select>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input class="inp" id="smtpHost" placeholder="smtp.gmail.com" style="flex:3"/>
+      <input class="inp" id="smtpPort" placeholder="587" type="number" style="flex:1"/>
+    </div>
+    <input class="inp" id="smtpUser" placeholder="dein@gmail.com" style="margin-bottom:6px"/>
+    <input class="inp" id="smtpPass" type="password" placeholder="App-Passwort (nicht Login-Passwort!)" style="margin-bottom:8px"/>
+    <div id="smtpStatus" style="display:none;padding:8px 12px;border-radius:9px;font-size:11px;line-height:1.6;margin-bottom:8px"></div>
+    <button onclick="testSmtp()" style="width:100%;background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.25);border-radius:9px;padding:9px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">📧 SMTP testen</button>
+    <div style="margin-top:8px;font-size:10px;color:var(--mu);line-height:1.6">⚠️ Gmail: App-Passwort unter myaccount.google.com → Sicherheit → App-Passwörter<br/>⚠️ Outlook: App-Passwort aus Microsoft Konto-Sicherheitseinstellungen</div>
+  </div>
+
+  <button class="btn btnp" style="margin-top:4px" onclick="saveSettings()">💾 Einstellungen speichern</button>
+
+  <!-- Status -->
+  <div class="stitle">Server-Status</div>
+  <div class="card" id="srvStatus" style="font-size:12px;line-height:1.9;color:var(--mu2)">Lade...</div>
+</div>
+
+<!-- Floating multi-select bar -->
+<div id="selectBar" style="display:none;position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:12px;right:12px;background:var(--s2);border:1px solid var(--bd);border-radius:16px;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:10px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.5)">
+  <div style="font-size:12px;color:var(--mu2)"><span id="selectCount">0</span> ausgewählt</div>
+  <div style="display:flex;gap:8px">
+    <button onclick="clearSelection()" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;color:var(--mu2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">✕ Abwählen</button>
+    <button onclick="markSelectedApplied()" style="background:rgba(129,140,248,.2);border:1px solid rgba(129,140,248,.4);border-radius:10px;padding:8px 12px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">📬 Als beworben</button>
+    <button onclick="applySelected()" style="background:linear-gradient(135deg,rgba(94,234,212,.8),rgba(244,114,182,.8));border:none;border-radius:10px;padding:8px 14px;color:#07070f;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;font-weight:700">🚀 Alle bewerben</button>
+  </div>
+</div>
+
+<div class="bnav">
+  <button class="nb active" onclick="nav('dashboard')" id="nav-dashboard"><span class="ni">📋</span><span class="nl">Jobs</span></button>
+  <button class="nb" onclick="nav('letter')" id="nav-letter"><span class="ni">✍️</span><span class="nl">Anschreiben</span></button>
+  <button class="nb" onclick="nav('profile')" id="nav-profile"><span class="ni">👤</span><span class="nl">Profil</span></button>
+  <button class="nb" onclick="nav('settings')" id="nav-settings"><span class="ni">⚙️</span><span class="nl">Einstellungen</span></button>
+</div>
+
+<script>
+const BASE = window.location.origin;
+let jobs=[], selectedJobId=null, currentLetter='', skillSet=new Set(), cvSkills=new Set();
+let searchCfg={ keywords:[], custom_sources:[] };
+let docs=[]; // { name, size, type, emoji }
+let jobTab='all';
+let scanInterval=60;
+let CONFIG_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
+let selectedJobs = new Set(); // multi-select
+
+// ── NAV ──────────────────────────────────────────────────────────────────
+function nav(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if (name==='settings') { loadServerStatus(); renderKwList(); renderSourceList(); renderIvBtns(); }
+}
+
+// ── API ───────────────────────────────────────────────────────────────────
+async function api(path, method='GET', body=null) {
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if (body) opts.body=JSON.stringify(body);
+  const res=await fetch(BASE+path, opts);
+  return res.json();
+}
+
+// ── JOBS ──────────────────────────────────────────────────────────────────
+async function loadJobs() {
+  try {
+    const data=await api('/api/jobs');
+    jobs=data.jobs||[];
+    document.getElementById('connBanner').style.display='none';
+    document.getElementById('dot').style.background='var(--a)';
+    document.getElementById('scanTxt').textContent=data.lastScan?'Scan: '+timeSince(data.lastScan):'Bereit';
+    renderStats(data); renderJobList();
+  } catch(e) {
+    document.getElementById('connBanner').style.display='block';
+    document.getElementById('dot').style.background='var(--a3)';
+    document.getElementById('scanTxt').textContent='Kein Server';
+    document.getElementById('jobList').innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px;line-height:1.8">❌ Server nicht erreichbar<br/><span style="color:var(--a3)">node server.js</span> auf dem PC starten</div>`;
+  }
+}
+
+function timeSince(iso) {
+  const d=Math.floor((Date.now()-new Date(iso))/60000);
+  if (d<1) return 'gerade eben'; if (d<60) return `vor ${d} Min`; return `vor ${Math.floor(d/60)} Std`;
+}
+
+function renderStats(data) {
+  document.getElementById('stN').textContent=jobs.filter(j=>j.status==='new').length;
+  document.getElementById('stA').textContent=jobs.filter(j=>j.status==='applied').length;
+  document.getElementById('stT').textContent=jobs.length;
+  document.getElementById('stS').textContent=data.scanCount||0;
+}
+
+function setJobTab(tab, el) {
+  jobTab=tab;
+  document.querySelectorAll('.jtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderJobList();
+}
+
+function renderJobList() {
+  // Update applied tab badge
+  const appliedCount = jobs.filter(j => j.status==='applied' || j.status==='interview').length;
+  const tabEl = document.getElementById('tabApplied');
+  if (tabEl) tabEl.textContent = `📬 Beworben${appliedCount ? ' ('+appliedCount+')' : ''}`;
+
+  let filtered;
+  if (jobTab==='applied') {
+    filtered = jobs.filter(j => j.status==='applied' || j.status==='interview');
+  } else {
+    // All other tabs: exclude applied/interview jobs
+    const active = jobs.filter(j => j.status !== 'applied' && j.status !== 'interview');
+    if      (jobTab==='remote') filtered = active.filter(j=>j.remote);
+    else if (jobTab==='local')  filtered = active.filter(j=>j.local&&!j.remote);
+    else if (jobTab==='car')    filtered = active.filter(j=>j.car);
+    else                        filtered = active;
+  }
+
+  const list=document.getElementById('jobList');
+  if (!filtered.length) {
+    list.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px">Keine Stellen in dieser Kategorie</div>`;
+    return;
+  }
+  const sm={new:['pn','Neu'],applied:['pa','Beworben'],interview:['pi','Interview']};
+  list.innerHTML=filtered.slice(0,120).map(j=>{
+    const [pc,pl]=sm[j.status]||['td','–'];
+    const mc=j.match>=90?'var(--a)':j.match>=75?'var(--a3)':'var(--a2)';
+    const tags=(j.keywords||[]).slice(0,3).map(k=>`<span class="tag ta">${k}</span>`).join('');
+    const badges=[j.remote?'<span class="tag ta">🌐 Remote</span>':'',j.car?'<span class="tag tc">🚗 Dienstwagen</span>':'',j.local&&!j.remote?'<span class="tag td">📍 Lokal</span>':''].filter(Boolean).join('');
+    const isSelected=selectedJobs.has(j.id);
+    const chkStyle=`width:20px;height:20px;border-radius:6px;border:2px solid ${isSelected?'var(--a)':'var(--bd)'};background:${isSelected?'var(--a)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#07070f;transition:all .15s`;
+    return `<div class="card" style="position:relative${isSelected?';border-color:rgba(94,234,212,.4)':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.title}</div>
+          <div style="font-size:11px;color:var(--mu2)">${j.company} · ${j.source||''}</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px">${j.location} · ${j.posted||''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${badges}${tags}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+          <div onclick="toggleSelect('${j.id}')" style="${chkStyle}">${isSelected?'✓':''}</div>
+          <div style="text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:${mc};line-height:1">${j.match||'?'}%</div>
+            <div style="font-size:9px;color:var(--mu)">Match</div>
+            <div class="pill ${pc}" style="margin-top:5px">${pl}</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--mu);margin-top:10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${j.desc||''}</div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button onclick="openLetter('${j.id}')" style="flex:2;background:linear-gradient(135deg,rgba(94,234,212,.8),rgba(244,114,182,.8));border:none;border-radius:10px;padding:10px;color:#07070f;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer">✍️ Anschreiben</button>
+        ${j.status==='new'?`<button onclick="quickApply('${j.id}')" style="flex:1;background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.25);border-radius:10px;padding:10px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🚀 E-Mail</button><button onclick="autoApply('${j.id}')" style="flex:1;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);border-radius:10px;padding:10px;color:var(--a2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🤖 Auto</button>`:''}
+      ${j.status!=='applied'&&j.status!=='interview'?`<button onclick="markApplied('${j.id}')" title="Als beworben markieren" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:10px 10px;color:var(--mu2);font-size:12px;cursor:pointer">📬</button>`:''}
+        <a href="${j.url||'#'}" target="_blank" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--mu2);font-size:14px;display:flex;align-items:center;text-decoration:none">↗</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markApplied(id) {
+  await api('/api/jobs/'+id,'PUT',{status:'applied'});
+  jobs=jobs.map(j=>j.id===id?{...j,status:'applied'}:j);
+  renderJobList(); toast('✓ Als beworben markiert');
+}
+
+// ── MULTI-SELECT ──────────────────────────────────────────────────────────
+function toggleSelect(id) {
+  if (selectedJobs.has(id)) selectedJobs.delete(id); else selectedJobs.add(id);
+  renderJobList(); updateSelectBar();
+}
+function updateSelectBar() {
+  const bar = document.getElementById('selectBar');
+  const n = selectedJobs.size;
+  document.getElementById('selectCount').textContent = n;
+  bar.style.display = n > 0 ? 'flex' : 'none';
+}
+function clearSelection() { selectedJobs.clear(); renderJobList(); updateSelectBar(); }
+async function markSelectedApplied() {
+  const ids = [...selectedJobs];
+  await Promise.all(ids.map(id => api('/api/jobs/'+id,'PUT',{status:'applied'}).catch(()=>{})));
+  jobs = jobs.map(j => ids.includes(j.id) ? {...j, status:'applied'} : j);
+  clearSelection();
+  toast(`📬 ${ids.length} Stelle${ids.length!==1?'n':''} als beworben markiert`);
+}
+
+async function quickApply(id) {
+  toast('⏳ Anschreiben wird erstellt...');
+  try {
+    const r = await api('/api/apply','POST',{jobId:id});
+    if (r.error) { toast('❌ '+r.error); return; }
+    handleApplyResult(r);
+    jobs = jobs.map(j=>j.id===id?{...j,status:'applied'}:j);
+    renderJobList();
+  } catch(e) { toast('❌ '+e.message); }
+}
+
+async function applySelected() {
+  const ids = [...selectedJobs];
+  if (!ids.length) return;
+  const total = ids.length;
+  let done = 0, ok = 0, failed = 0;
+  for (const id of ids) {
+    toast(`⏳ Bewerbe ${++done}/${total}...`);
+    try {
+      const r = await api('/api/apply','POST',{jobId:id});
+      if (r.ok) { ok++; jobs=jobs.map(j=>j.id===id?{...j,status:'applied'}:j); }
+      else failed++;
+    } catch(e) { failed++; }
+  }
+  clearSelection();
+  toast(`✅ ${ok} Bewerbungen gesendet${failed?` · ${failed} fehlgeschlagen`:''}`);
+}
+
+function handleApplyResult(r) {
+  if (r.method === 'email_sent') {
+    toast('✅ E-Mail direkt gesendet' + (r.contactEmail ? ' an '+r.contactEmail : ''));
+  } else if (r.method === 'mailto') {
+    const sub = encodeURIComponent(r.lang==='en' ? `Application: ${r.title}` : `Bewerbung: ${r.title} bei ${r.company}`);
+    const body = encodeURIComponent(r.letter||'');
+    window.open(`mailto:${r.contactEmail}?subject=${sub}&body=${body}`, '_blank');
+    toast('📧 E-Mail-App geöffnet – bitte absenden!');
+  } else {
+    // fallback: copy + open URL
+    const job = jobs.find(j=>j.id===selectedJobId)||{};
+    if (r.letter) navigator.clipboard?.writeText(r.letter).catch(()=>{});
+    if (job.url && job.url!=='#') window.open(job.url,'_blank');
+    toast('📋 Anschreiben kopiert · Stelle geöffnet – einfügen!');
+  }
+}
+
+async function triggerScan() {
+  document.getElementById('pbar').style.display='block';
+  document.getElementById('scanTxt').textContent='Scannt...';
+  let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*4,88);document.getElementById('pfill').style.width=p+'%';},500);
+  try {
+    await api('/api/scan','POST');
+    toast('🔍 Scan läuft auf dem PC...');
+    setTimeout(async()=>{clearInterval(iv);document.getElementById('pfill').style.width='100%';await loadJobs();setTimeout(()=>{document.getElementById('pbar').style.display='none';},800);},10000);
+  } catch(e) { clearInterval(iv); document.getElementById('pbar').style.display='none'; toast('❌ Server nicht erreichbar'); }
+}
+
+// ── COVER LETTER ──────────────────────────────────────────────────────────
+function openLetter(id) {
+  selectedJobId=id; nav('letter');
+  const job=jobs.find(j=>j.id===id); if(!job) return;
+  document.getElementById('noJob').style.display='none';
+  document.getElementById('ljCard').style.display='block';
+  document.getElementById('lsec').style.display='block';
+  document.getElementById('ljTitle').textContent=job.title;
+  document.getElementById('ljComp').textContent=job.company+' · '+job.location;
+  document.getElementById('ljTags').innerHTML=(job.keywords||[]).map(k=>`<span class="tag ta">${k}</span>`).join('')+(job.remote?'<span class="tag tb">Remote</span>':'');
+  generateLetter(job);
+}
+
+async function generateLetter(job) {
+  const out=document.getElementById('lout');
+  out.value=''; out.classList.add('cursor'); currentLetter='';
+  try {
+    const data=await api('/api/coverletter','POST',{job});
+    if (data.error) throw new Error(data.error);
+    const text=data.letter||''; currentLetter=text;
+    let i=0; const iv=setInterval(()=>{if(i>=text.length){clearInterval(iv);out.classList.remove('cursor');return;}out.value+=text[i++];},10);
+  } catch(e) { out.classList.remove('cursor'); out.value='❌ '+e.message+'\n\nAPI Key unter Einstellungen eintragen.'; }
+}
+
+function regenLetter(){const j=jobs.find(j=>j.id===selectedJobId);if(j)generateLetter(j);}
+function copyLetter(){const t=document.getElementById('lout').value;navigator.clipboard?.writeText(t).then(()=>toast('📋 Kopiert!'));}
+function markAppliedCurrent(){if(selectedJobId)markApplied(selectedJobId);}
+
+async function applyNow() {
+  const job=jobs.find(j=>j.id===selectedJobId); if(!job) return;
+  const text=document.getElementById('lout').value;
+  if (!text||text.trim().length<20){toast('❌ Anschreiben noch nicht fertig');return;}
+  toast('⏳ Bewerbung wird gesendet...');
+  try {
+    const r = await api('/api/apply','POST',{jobId:job.id});
+    if (r.error) { toast('❌ '+r.error); return; }
+    handleApplyResult(r);
+    jobs=jobs.map(j=>j.id===job.id?{...j,status:'applied'}:j);
+    renderJobList();
+  } catch(e) {
+    // Server-side apply failed – fallback to clipboard
+    try { await navigator.clipboard.writeText(text); } catch(er) {}
+    if (job.url&&job.url!=='#') window.open(job.url,'_blank');
+    await markApplied(job.id);
+    toast('📋 Anschreiben kopiert · Stelle geöffnet – einfügen!');
+  }
+}
+
+function downloadLetter() {
+  const job=jobs.find(j=>j.id===selectedJobId);
+  const text=document.getElementById('lout').value;
+  if (!text||text.trim().length<20){toast('❌ Kein Anschreiben vorhanden');return;}
+  const header=job?`Anschreiben – ${job.title} bei ${job.company}\n${'='.repeat(50)}\n\n`:'';
+  const blob=new Blob([header+text],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Anschreiben_${(job?.company||'Stelle').replace(/[^a-zA-Z0-9]/g,'_')}.txt`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+let _letterPdfB64 = null, _letterPdfName = 'Anschreiben.pdf', _letterPdfContext = {};
+async function downloadLetterPdf() {
+  const text = document.getElementById('lout').value;
+  if (!text||text.trim().length<20){toast('❌ Kein Anschreiben vorhanden');return;}
+  const btn = document.getElementById('dlPdfBtn');
+  btn.disabled=true; btn.textContent='⏳ PDF...';
+  try {
+    const r = await api('/api/generate-pdf','POST',{ letter:text, title:_letterPdfContext.title||'', company:_letterPdfContext.company||'' });
+    if (r.error) throw new Error(r.error);
+    const bytes = atob(r.pdfBase64);
+    const buf = new Uint8Array(bytes.length);
+    for (let i=0; i<bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+    const blob = new Blob([buf], { type:'application/pdf' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = _letterPdfName;
+    a.click(); URL.revokeObjectURL(a.href);
+  } catch(e) { toast('❌ '+e.message); }
+  finally { btn.disabled=false; btn.textContent='📄 PDF laden'; }
+}
+
+async function generateFromUrl() {
+  const url = document.getElementById('letterUrl').value.trim();
+  if (!url || !/^https?:\/\//i.test(url)) { toast('❌ Bitte gültige URL eingeben'); return; }
+  const btn = document.getElementById('letterUrlBtn');
+  const status = document.getElementById('letterUrlStatus');
+  btn.disabled = true; btn.textContent = '⏳ ...';
+  status.style.display = 'block'; status.textContent = '🔍 Stelle wird geladen...';
+  _letterPdfB64 = null;
+  try {
+    const r = await api('/api/letter-from-url', 'POST', { url });
+    if (r.error) throw new Error(r.error);
+    // Show job card
+    document.getElementById('noJob').style.display = 'none';
+    document.getElementById('ljCard').style.display = 'block';
+    document.getElementById('ljTitle').textContent = r.title || '–';
+    document.getElementById('ljComp').textContent = r.company || '–';
+    document.getElementById('ljTags').innerHTML = `<span class="tag ta">${r.lang==='en'?'🇬🇧 Englisch':'🇩🇪 Deutsch'}</span>`;
+    // Show letter
+    const out = document.getElementById('lout');
+    document.getElementById('lsec').style.display = 'block';
+    out.value = ''; out.classList.add('cursor');
+    const text = r.letter || '';
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i >= text.length) { clearInterval(iv); out.classList.remove('cursor'); return; }
+      out.value += text[i++];
+    }, 8);
+    // Store context for PDF naming
+    _letterPdfContext = { title: r.title||'', company: r.company||'' };
+    _letterPdfName = `Anschreiben_${(r.company||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]/g,'_')}.pdf`;
+    status.style.display = 'none';
+    selectedJobId = null; // not a tracked job
+  } catch(e) {
+    status.textContent = '❌ ' + e.message;
+    toast('❌ ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '✍️ Erstellen';
+  }
+}
+
+// ── SKILLS ────────────────────────────────────────────────────────────────
+function renderSkills() {
+  const c=document.getElementById('skillChips');
+  document.getElementById('skillPh').style.display=skillSet.size?'none':'';
+  const chips=[...skillSet].map(s=>{
+    const safe=s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<span class="chip ${cvSkills.has(s)?'chip-cv':'chip-manual'}" data-skill="${safe}">${cvSkills.has(s)?'📄':'✏️'} ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
+  }).join('');
+  c.innerHTML=chips+(skillSet.size?'':document.getElementById('skillPh').outerHTML);
+  c.querySelectorAll('.chip[data-skill]').forEach(el=>{
+    el.addEventListener('click',()=>removeSkill(el.dataset.skill));
+  });
+}
+
+function removeSkill(s){skillSet.delete(s);cvSkills.delete(s);renderSkills();}
+
+function addSkill(){
+  const inp=document.getElementById('skillIn');
+  inp.value.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>skillSet.add(s));
+  inp.value=''; renderSkills();
+}
+
+// ── CV UPLOAD + ANALYSIS ──────────────────────────────────────────────────
+async function handleCV(input) {
+  const file=input.files[0]; if(!file) return;
+  document.getElementById('cvLabel').innerHTML=`<div style="font-size:24px;margin-bottom:4px">✅</div><div style="color:var(--a)">${file.name}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div>`;
+
+  const cvProg=document.getElementById('cvProg');
+  const cvFill=document.getElementById('cvProgFill');
+  const cvTxt=document.getElementById('cvProgTxt');
+  const cvSt=document.getElementById('cvStatus');
+  cvProg.style.display='block'; cvSt.style.display='block'; cvSt.textContent='Lese PDF...';
+
+  let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*7,85);cvFill.style.width=p+'%';},300);
+
+  try {
+    const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    cvSt.textContent='KI analysiert...'; cvTxt.textContent='KI extrahiert Skills aus deinem Lebenslauf...';
+
+    const data=await api('/api/analyze-cv','POST',{base64,mediaType:'application/pdf'});
+    if (data.error) throw new Error(data.error);
+
+    clearInterval(iv); cvFill.style.width='100%';
+    let parsed;
+    try {
+      // Strip markdown fences, leading/trailing whitespace, and any text before/after the JSON object
+      let clean = data.raw.replace(/```json|```/gi, '').trim();
+      // Extract the first {...} block in case the model adds surrounding text
+      const jsonMatch = clean.match(/\{[\s\S]*\}/);
+      if (jsonMatch) clean = jsonMatch[0];
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      // Last resort: try to salvage skill arrays via regex
+      const extract = (key) => { const m = data.raw.match(new RegExp('"'+key+'"\\s*:\\s*\\[([^\\]]*?)\\]')); if (!m) return []; return [...m[1].matchAll(/"([^"]+)"/g)].map(x=>x[1]); };
+      parsed = { technical: extract('technical'), languages: extract('languages'), tools: extract('tools'), soft: extract('soft'), domains: extract('domains'), experience_summary: '' };
+      if (!parsed.technical.length && !parsed.languages.length && !parsed.tools.length) {
+        console.error('CV parse Rohausgabe:', data.raw);
+        throw new Error('Konnte Skills nicht parsen – Rohausgabe: ' + data.raw.slice(0,120));
+      }
+    }
+
+    const all=[...(parsed.languages||[]),...(parsed.technical||[]),...(parsed.tools||[]),...(parsed.soft||[]),...(parsed.domains||[])];
+    all.forEach(s=>{cvSkills.add(s);skillSet.add(s);});
+    if (parsed.experience_summary&&!document.getElementById('pExp').value) document.getElementById('pExp').value=parsed.experience_summary;
+
+    renderSkills();
+    cvSt.textContent=`✓ ${all.length} Skills gefunden`;
+    cvTxt.textContent=`${all.length} Skills erkannt`;
+    setTimeout(()=>{cvProg.style.display='none';cvSt.style.display='none';},3000);
+    toast(`✨ ${all.length} Skills aus Lebenslauf extrahiert!`);
+  } catch(e) {
+    clearInterval(iv); cvProg.style.display='none'; cvSt.style.display='none';
+    toast('❌ '+e.message.slice(0,60));
+  }
+}
+
+// ── MULTI DOCS ────────────────────────────────────────────────────────────
+const DOCTYPE=[{l:'Arbeitszeugnis',e:'📋',m:/zeugnis|arbeits/i},{l:'Bachelorzeugnis',e:'🎓',m:/bachelor|master|diplom|hochschul/i},{l:'Abiturzeugnis',e:'🏫',m:/abitur|abi|schul/i},{l:'Zertifikat',e:'🏅',m:/zertifikat|certif|aws|azure|google/i},{l:'Sonstiges',e:'📄',m:/.*/}];
+function guessType(n){return DOCTYPE.find(t=>t.m.test(n.toLowerCase()))||DOCTYPE[DOCTYPE.length-1];}
+
+function renderDocs() {
+  const list=document.getElementById('docList');
+  const hint=document.getElementById('docHint');
+  if (!docs.length){list.innerHTML='';list.appendChild(hint);return;}
+  hint.style.display='none';
+  list.innerHTML=docs.map((d,i)=>`<div class="docitem">
+    <span style="font-size:20px;flex-shrink:0">${d.emoji}</span>
+    <div style="flex:1;min-width:0"><div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div><div style="font-size:10px;color:var(--mu);margin-top:1px">${d.type} · ${d.size}</div></div>
+    <button onclick="removeDoc(${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0">✕</button>
+  </div>`).join('');
+}
+
+function removeDoc(i){docs.splice(i,1);renderDocs();saveDocs();}
+
+function handleDocs(input) {
+  Array.from(input.files).forEach(f=>{const dt=guessType(f.name);docs.push({name:f.name,size:f.size<1048576?(f.size/1024).toFixed(0)+' KB':(f.size/1048576).toFixed(1)+' MB',type:dt.l,emoji:dt.e});});
+  renderDocs(); saveDocs(); toast(`✓ ${input.files.length} Dokument(e) hinzugefügt`); input.value='';
+}
+
+function saveDocs(){try{localStorage.setItem('jh_docs',JSON.stringify(docs));}catch(e){}}
+function loadDocs(){try{const d=localStorage.getItem('jh_docs');if(d){docs=JSON.parse(d);renderDocs();}}catch(e){}}
+
+// ── PROFILE ───────────────────────────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const p=await api('/api/profile');
+    if(p.name)document.getElementById('pName').value=p.name;
+    if(p.email)document.getElementById('pEmail').value=p.email;
+    if(p.phone)document.getElementById('pPhone').value=p.phone;
+    if(p.experience)document.getElementById('pExp').value=p.experience;
+    if(p.bio)document.getElementById('pBio').value=p.bio;
+    if(p.location)document.getElementById('pLocation').value=p.location;
+    if(p.skills){p.skills.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>skillSet.add(s));}
+    if(p.cvSkills){p.cvSkills.forEach(s=>{cvSkills.add(s);skillSet.add(s);});}
+    renderSkills();
+    // Toggles
+    if(p.want_remote===false)document.getElementById('togRemote').classList.remove('on');
+    if(p.want_local===false)document.getElementById('togLocal').classList.remove('on');
+    if(p.want_car===false)document.getElementById('togCar').classList.remove('on');
+    if(p.radius_km){
+      document.getElementById('distSlider').value=Math.min(p.radius_km,250);
+      document.getElementById('distInput').value=p.radius_km;
+      document.getElementById('distLbl').textContent=p.radius_km+' km';
+    }
+    if(p.radius_car_km){
+      document.getElementById('carDistSlider').value=Math.min(p.radius_car_km,300);
+      document.getElementById('carDistInput').value=p.radius_car_km;
+      document.getElementById('carDistLbl').textContent=p.radius_car_km+' km';
+    }
+  } catch(e){}
+}
+
+async function saveProfile() {
+  const profile={
+    name:document.getElementById('pName').value,
+    email:document.getElementById('pEmail').value,
+    phone:document.getElementById('pPhone').value,
+    experience:document.getElementById('pExp').value,
+    bio:document.getElementById('pBio').value,
+    location:document.getElementById('pLocation').value,
+    skills:[...skillSet].join(', '),
+    cvSkills:[...cvSkills],
+    want_remote:document.getElementById('togRemote').classList.contains('on'),
+    want_local:document.getElementById('togLocal').classList.contains('on'),
+    want_car:document.getElementById('togCar').classList.contains('on'),
+    radius_km:parseInt(document.getElementById('distInput').value)||parseInt(document.getElementById('distSlider').value)||10,
+    radius_car_km:parseInt(document.getElementById('carDistInput').value)||parseInt(document.getElementById('carDistSlider').value)||50,
+  };
+  try {
+    await api('/api/profile','POST',profile);
+    // Also update search config with location prefs
+    const sc=await api('/api/search');
+    await api('/api/search','POST',{...sc,location:profile.location||'Schweinfurt',radius_km:profile.radius_km,radius_car_km:profile.radius_car_km,want_remote:profile.want_remote,want_local:profile.want_local,want_car:profile.want_car});
+    toast('✓ Gespeichert');
+  } catch(e){toast('❌ Server nicht erreichbar');}
+}
+
+// ── SEARCH CONFIG ─────────────────────────────────────────────────────────
+const KW_SUGGESTIONS=['SAP ABAP Junior','Junior SAP Basis','UX Designer Junior','Junior UI/UX','Embedded Systems Junior','Junior Firmware Developer','Junior DevOps Engineer','Junior Data Analyst','Junior Python Developer','Junior iOS Developer','Junior Android Developer','IT-Support Junior','Junior Netzwerkadministrator'];
+
+async function loadSearchCfg() {
+  try {
+    searchCfg=await api('/api/search');
+    // Restore source toggle states
+    const s=searchCfg.sources||{};
+    const set=(id,val,def=true)=>{const el=document.getElementById(id);if(!el)return;val===false||val===true?el.classList.toggle('on',val):el.classList.toggle('on',def);};
+    set('srcAA', s.aa, true);
+    set('srcIn', s.indeed, true);
+    set('srcSS', s.stepstone, true);
+    set('srcLI', s.linkedin, false);
+    set('srcXi', s.xing, false);
+    set('srcHe', s.heise, true);
+    set('srcGo', s.google, true);
+  } catch(e){}
+}
+
+function renderKwList() {
+  const list=document.getElementById('kwList');
+  list.innerHTML=(searchCfg.keywords||[]).map((kw,i)=>`<span class="kwtag" onclick="removeKw(${i})">${kw} <span style="opacity:.5">×</span></span>`).join('');
+  // Suggestions (not already in list)
+  const sugg=document.getElementById('kwSuggestions');
+  sugg.innerHTML=KW_SUGGESTIONS.filter(s=>!(searchCfg.keywords||[]).includes(s)).slice(0,8).map(s=>`<span onclick="quickAddKw('${s.replace(/'/g,"\\'")}',this)" style="font-size:10px;padding:3px 9px;border-radius:5px;background:var(--s2);color:var(--mu2);cursor:pointer;border:1px solid var(--bd);margin:2px">${s}</span>`).join('');
+}
+
+function removeKw(i){searchCfg.keywords.splice(i,1);renderKwList();}
+
+function addKw(){
+  const v=document.getElementById('kwIn').value.trim(); if(!v) return;
+  if(!searchCfg.keywords.includes(v)) searchCfg.keywords.push(v);
+  document.getElementById('kwIn').value=''; renderKwList();
+}
+
+function quickAddKw(kw, el){
+  if(!searchCfg.keywords.includes(kw)) searchCfg.keywords.push(kw);
+  el.style.display='none'; renderKwList();
+}
+
+function renderSourceList() {
+  const list=document.getElementById('srcList');
+  const sources=searchCfg.custom_sources||[];
+  if (!sources.length){list.innerHTML='<div style="font-size:11px;color:var(--mu);margin-bottom:8px">Noch keine eigenen Quellen</div>';return;}
+  list.innerHTML=sources.map((s,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:6px">
+    <div style="flex:1;min-width:0"><div style="font-size:12px">${s.name}</div><div style="font-size:10px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.url}</div></div>
+    <button onclick="removeSrc(${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:4px 8px;color:#f87171;font-size:11px;cursor:pointer">✕</button>
+  </div>`).join('');
+}
+
+function removeSrc(i){searchCfg.custom_sources.splice(i,1);renderSourceList();}
+
+function addSource(){
+  const name=document.getElementById('srcName').value.trim();
+  const url=document.getElementById('srcUrl').value.trim();
+  if(!name||!url){toast('Name und URL eingeben');return;}
+  if(!searchCfg.custom_sources) searchCfg.custom_sources=[];
+  searchCfg.custom_sources.push({name,url});
+  document.getElementById('srcName').value='';
+  document.getElementById('srcUrl').value='';
+  renderSourceList();
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────
+function renderIvBtns(){
+  const ivs=[['30','30 Min'],['60','1 Std'],['120','2 Std'],['360','6 Std']];
+  document.getElementById('ivBtns').innerHTML=ivs.map(([v,l])=>`<button onclick="scanInterval=${v};renderIvBtns()" style="background:${scanInterval==v?'rgba(94,234,212,.2)':'var(--s2)'};border:1px solid ${scanInterval==v?'var(--a)':'var(--bd)'};border-radius:9px;padding:8px 14px;color:${scanInterval==v?'var(--a)':'var(--mu2)'};font-size:12px;font-family:'DM Mono',monospace;cursor:pointer">${l}</button>`).join('');
+}
+
+async function testAnthropicKey() {
+  const key = document.getElementById('apiKey').value.trim();
+  const res = document.getElementById('anthropicTestResult');
+  res.style.display = 'block';
+  res.style.background = 'rgba(255,255,255,.04)';
+  res.style.border = '1px solid var(--bd)';
+  res.style.color = 'var(--mu2)';
+  res.textContent = '⏳ Teste Key & lade verfügbare Modelle...';
+  if (key) await api('/api/config','POST',{apiKey: key});
+  try {
+    const d = await api('/api/test-anthropic');
+    const modelHtml = d.models && d.models.length
+      ? '<br/><br/><strong style="color:var(--a4)">Verfügbare Modelle:</strong><br/>' + d.models.map(m => `• ${m}`).join('<br/>')
+      : '';
+    if (d.ok) {
+      res.style.background = 'rgba(94,234,212,.06)';
+      res.style.border = '1px solid rgba(94,234,212,.25)';
+      res.style.color = 'var(--a)';
+      res.innerHTML = '✅ API Key funktioniert!' + modelHtml;
+    } else {
+      res.style.background = 'rgba(239,68,68,.06)';
+      res.style.border = '1px solid rgba(239,68,68,.2)';
+      res.style.color = '#f87171';
+      res.innerHTML = '❌ ' + d.error + modelHtml;
+    }
+    // Auto-populate dropdown with real available models
+    if (d.models && d.models.length) {
+      const sel = document.getElementById('anthropicModel');
+      sel.innerHTML = d.models.map(m => `<option value="${m}">${m}</option>`).join('');
+      const active = d.activeModel || d.models[0];
+      sel.value = active;
+      await api('/api/config','POST',{anthropicModel: active});
+      if (d.ok) toast('✓ Modell: ' + active);
+    }
+  } catch(e) {
+    res.style.background = 'rgba(239,68,68,.06)';
+    res.style.border = '1px solid rgba(239,68,68,.2)';
+    res.style.color = '#f87171';
+    res.textContent = '❌ Server nicht erreichbar';
+  }
+}
+
+// ── AI MODE TOGGLE ────────────────────────────────────────────────────────
+let aiMode = 'anthropic'; // 'anthropic' | 'ollama'
+
+function toggleAIMode() {
+  const tog = document.getElementById('togAI');
+  tog.classList.toggle('on');
+  aiMode = tog.classList.contains('on') ? 'anthropic' : 'ollama';
+  document.getElementById('aiModeLabel').textContent = aiMode === 'anthropic' ? 'Anthropic API (Cloud)' : 'Ollama (Lokal · kostenlos)';
+  document.getElementById('anthropicSec').style.display = aiMode === 'anthropic' ? 'block' : 'none';
+  document.getElementById('ollamaSec').style.display = aiMode === 'ollama' ? 'block' : 'none';
+  if (aiMode === 'ollama') loadOllamaStatus();
+}
+
+async function loadOllamaStatus() {
+  const el = document.getElementById('ollamaStatus');
+  el.textContent = 'Verbinde mit Ollama...';
+  try {
+    const d = await api('/api/ollama-status');
+    if (d.running) {
+      const modelList = d.models.length ? d.models.join(', ') : 'Keine Modelle gefunden';
+      el.innerHTML = `<span style="color:var(--a)">✅ Ollama läuft</span><br/>Installierte Modelle: <span style="color:var(--a4)">${modelList}</span><br/>Aktives Modell: <strong style="color:var(--a)">${d.currentModel}</strong>`;
+      // Auto-select matching model in dropdown
+      if (d.models.length) {
+        const sel = document.getElementById('ollamaModel');
+        const match = d.models.find(m => m.includes('qwen2.5:32') || m.includes('qwen2.5:14') || m.includes('llama3.1:70') || m.includes('mistral'));
+        if (match) sel.value = match.startsWith('qwen2.5:32') ? 'qwen2.5:32b' : match.startsWith('qwen2.5:14') ? 'qwen2.5:14b' : match.startsWith('llama3.1:70') ? 'llama3.1:70b' : 'mistral:7b';
+      }
+    } else {
+      el.innerHTML = `<span style="color:var(--a3)">❌ Ollama nicht gefunden</span><br/>Bitte installieren und starten (ollama.com)`;
+    }
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--a3)">❌ Server nicht erreichbar</span>';
+  }
+}
+
+// Custom model input toggle
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ollamaModel')?.addEventListener('change', function() {
+    document.getElementById('ollamaModelCustom').style.display = this.value === 'custom' ? 'block' : 'none';
+  });
+});
+
+async function loadServerStatus(){
+  try{
+    const s = await api('/api/status');
+    document.getElementById('srvStatus').innerHTML = `
+      <span style="color:var(--a)">✅ Server läuft</span><br/>
+      Letzter Scan: ${s.lastScan ? timeSince(s.lastScan) : 'noch nie'}<br/>
+      Scans gesamt: ${s.scanCount}<br/>
+      Jobs gespeichert: ${s.jobCount}<br/>
+      KI-Modus: <strong style="color:${s.aiMode==='ollama'?'var(--a4)':'var(--a2)'}">${s.aiMode==='ollama'?'🖥️ Ollama ('+s.ollamaModel+')':'☁️ Anthropic ('+s.anthropicModel+')'}</strong><br/>
+      API Key: ${s.apiKeySet ? '✅ vorhanden' : '❌ fehlt'}<br/>
+      E-Mail Bewerbung: ${s.smtpConfigured ? '✅ SMTP konfiguriert' : '⚠️ kein SMTP (Anschreiben wird kopiert)'}${s.userEmail?' · '+s.userEmail:''}`;
+    // Sync toggle state
+    if (s.aiMode) {
+      aiMode = s.aiMode;
+      const tog = document.getElementById('togAI');
+      if (s.aiMode === 'anthropic' && !tog.classList.contains('on')) tog.classList.add('on');
+      if (s.aiMode === 'ollama' && tog.classList.contains('on')) tog.classList.remove('on');
+      document.getElementById('aiModeLabel').textContent = s.aiMode === 'anthropic' ? 'Anthropic API (Cloud)' : 'Ollama (Lokal · kostenlos)';
+      document.getElementById('anthropicSec').style.display = s.aiMode === 'anthropic' ? 'block' : 'none';
+      document.getElementById('ollamaSec').style.display = s.aiMode === 'ollama' ? 'block' : 'none';
+      if (s.anthropicModel) { const sel = document.getElementById('anthropicModel'); if (sel) sel.value = s.anthropicModel; CONFIG_ANTHROPIC_MODEL = s.anthropicModel; }
+    }
+    // Restore email/SMTP fields
+    if (s.userEmail) document.getElementById('userEmail').value = s.userEmail;
+  } catch(e) {
+    document.getElementById('srvStatus').innerHTML = '<span style="color:var(--a3)">❌ Server nicht erreichbar</span>';
+  }
+}
+
+// ── SMTP HELPERS ──────────────────────────────────────────────────────────
+function applySmtpPreset() {
+  const p = document.getElementById('smtpPreset').value;
+  const presets = {
+    gmail:   ['smtp.gmail.com',   587],
+    outlook: ['smtp.office365.com', 587],
+    'web.de':['smtp.web.de',      587],
+    gmx:     ['mail.gmx.net',     587],
+    ionos:   ['smtp.ionos.de',    587],
+  };
+  if (presets[p]) {
+    document.getElementById('smtpHost').value = presets[p][0];
+    document.getElementById('smtpPort').value = presets[p][1];
+  }
+}
+
+async function testSmtp() {
+  const host=document.getElementById('smtpHost').value.trim();
+  const port=document.getElementById('smtpPort').value||587;
+  const user=document.getElementById('smtpUser').value.trim();
+  const pass=document.getElementById('smtpPass').value;
+  const email=document.getElementById('userEmail').value.trim()||user;
+  const el=document.getElementById('smtpStatus');
+  if (!host||!user||!pass){el.style.display='block';el.style.background='rgba(244,114,182,.1)';el.style.border='1px solid rgba(244,114,182,.3)';el.textContent='❌ Bitte alle SMTP-Felder ausfüllen';return;}
+  el.style.display='block';el.style.background='var(--s2)';el.style.border='1px solid var(--bd)';el.textContent='📧 Sende Test-E-Mail...';
+  try {
+    await api('/api/config','POST',{smtpHost:host,smtpPort:parseInt(port),smtpUser:user,smtpPass:pass,userEmail:email});
+    // Send a test email by creating a fake "test" apply — or just show instructions
+    el.style.background='rgba(94,234,212,.1)';el.style.border='1px solid rgba(94,234,212,.3)';
+    el.textContent=`✅ SMTP gespeichert! Beim nächsten "Bewerben" wird eine E-Mail gesendet. Bestätigung kommt an: ${email||user}`;
+  } catch(e) {
+    el.style.background='rgba(244,114,182,.1)';el.style.border='1px solid rgba(244,114,182,.3)';
+    el.textContent='❌ '+e.message;
+  }
+}
+
+async function saveSettings(){
+  const key = document.getElementById('apiKey').value.trim();
+  let anthropicModel = document.getElementById('anthropicModel')?.value || CONFIG_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+  let ollamaModel = document.getElementById('ollamaModel')?.value || 'qwen2.5:32b';
+  if (ollamaModel === 'custom') ollamaModel = document.getElementById('ollamaModelCustom').value || 'qwen2.5:32b';
+  // Collect source toggle states
+  const sources = {
+    aa:        document.getElementById('srcAA')?.classList.contains('on') ?? true,
+    indeed:    document.getElementById('srcIn')?.classList.contains('on') ?? true,
+    stepstone: document.getElementById('srcSS')?.classList.contains('on') ?? true,
+    linkedin:  document.getElementById('srcLI')?.classList.contains('on') ?? false,
+    xing:      document.getElementById('srcXi')?.classList.contains('on') ?? false,
+    heise:     document.getElementById('srcHe')?.classList.contains('on') ?? true,
+    google:    document.getElementById('srcGo')?.classList.contains('on') ?? true,
+  };
+  // Collect SMTP settings
+  const smtpHost = document.getElementById('smtpHost').value.trim();
+  const smtpPort = parseInt(document.getElementById('smtpPort').value)||587;
+  const smtpUser = document.getElementById('smtpUser').value.trim();
+  const smtpPass = document.getElementById('smtpPass').value;
+  const userEmail = document.getElementById('userEmail').value.trim();
+  try {
+    await api('/api/config', 'POST', { apiKey: key || undefined, scanInterval, aiMode, ollamaModel, anthropicModel, smtpHost, smtpPort, smtpUser, smtpPass: smtpPass||undefined, userEmail });
+    await api('/api/search', 'POST', { ...searchCfg, sources });
+    searchCfg.sources = sources;
+    // If Anthropic mode and key entered: auto-detect valid model
+    if (aiMode === 'anthropic' && key) {
+      try {
+        const d = await api('/api/test-anthropic');
+        if (d.models && d.models.length) {
+          const sel = document.getElementById('anthropicModel');
+          sel.innerHTML = d.models.map(m => `<option value="${m}">${m}</option>`).join('');
+          const active = d.activeModel || d.models[0];
+          sel.value = active;
+          CONFIG_ANTHROPIC_MODEL = active;
+          await api('/api/config','POST',{anthropicModel: active});
+          toast(d.ok ? '✓ Gespeichert · Modell: ' + active : '⚠️ Key gespeichert, aber: ' + d.error);
+          loadServerStatus();
+          return;
+        }
+      } catch(e) { /* fall through to normal toast */ }
+    }
+    toast('✓ Gespeichert');
+    loadServerStatus();
+    if (aiMode === 'ollama') loadOllamaStatus();
+  } catch(e) { toast('❌ Server nicht erreichbar'); }
+}
+
+// ── RADIUS SYNC ───────────────────────────────────────────────────────────
+function syncRadius(which, raw) {
+  const val=Math.max(1,parseInt(raw)||1);
+  const slider=document.getElementById(which+'Slider');
+  const input=document.getElementById(which+'Input');
+  const lbl=document.getElementById(which==='dist'?'distLbl':'carDistLbl');
+  if(slider) slider.value=Math.min(val,parseInt(slider.max));
+  if(input) input.value=val;
+  if(lbl) lbl.textContent=val+' km';
+}
+
+async function browserSetup() {
+  const hint = document.getElementById('browserSetupHint');
+  hint.style.display = 'block';
+  try {
+    const r = await api('/api/browser-setup', 'POST', {});
+    if (r.error) { toast('❌ ' + r.error); hint.style.display = 'none'; }
+    else toast('🌐 Browser geöffnet – jetzt einloggen und dann schließen');
+  } catch(e) { toast('❌ ' + e.message); hint.style.display = 'none'; }
+}
+
+// ── AUTO-APPLY ────────────────────────────────────────────────────────────
+let autoSession = null, autoPollIv = null, autoCurrentJobId = null;
+
+async function autoApply(jobId) {
+  autoCurrentJobId = jobId;
+  const job = jobs.find(j => j.id === jobId);
+  document.getElementById('autoJobLabel').textContent = (job?.title||'') + (job?.company ? ' · ' + job.company : '');
+  document.getElementById('autoSteps').innerHTML = '<div style="color:var(--a)">⏳ Startet...</div>';
+  document.getElementById('autoScreenWrap').style.display = 'none';
+  const sb = document.getElementById('autoSubmitBtn');
+  sb.style.display = 'none'; sb.disabled = false; sb.textContent = '✅ Jetzt absenden';
+  document.getElementById('autoOverlay').style.display = 'flex';
+  try {
+    const r = await api('/api/auto-apply', 'POST', { jobId });
+    if (r.error) {
+      document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)">❌ ${r.error}</div>`;
+      return;
+    }
+    autoSession = r.sessionId;
+    autoPollIv = setInterval(pollAutoSession, 1800);
+  } catch(e) {
+    document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)">❌ ${e.message}</div>`;
+  }
+}
+
+async function pollAutoSession() {
+  if (!autoSession) return;
+  try {
+    const r = await api('/api/auto-apply/' + autoSession, 'GET');
+    const stepsEl = document.getElementById('autoSteps');
+    stepsEl.innerHTML = r.steps.filter(Boolean).map(s =>
+      `<div style="color:${
+        s.startsWith('❌')||s.startsWith('⚠️') ? 'var(--a3)' :
+        s.startsWith('✅')||s.startsWith('🎉')||s.startsWith('📎')||s.startsWith('📄') ? 'var(--a)' :
+        s.startsWith('🛑')||s.startsWith('👉') ? 'var(--a4)' :
+        s.startsWith('🤖')||s.startsWith('💡') ? 'var(--mu2)' : 'var(--tx)'
+      }">${s}</div>`
+    ).join('');
+    stepsEl.scrollTop = stepsEl.scrollHeight;
+    if (r.screenshot) {
+      document.getElementById('autoScreenImg').src = 'data:image/jpeg;base64,' + r.screenshot;
+      document.getElementById('autoScreenWrap').style.display = 'block';
+    }
+    const submitBtn = document.getElementById('autoSubmitBtn');
+    const continueBtn = document.getElementById('autoContinueBtn');
+    submitBtn.style.display = r.status === 'ready' ? 'block' : 'none';
+    continueBtn.style.display = r.status === 'waiting_manual' ? 'block' : 'none';
+    if (['submitted','closed','error','gone'].includes(r.status)) {
+      clearInterval(autoPollIv); autoPollIv = null;
+      if (r.status === 'submitted') { jobs = jobs.map(j => j.id===autoCurrentJobId ? {...j,status:'applied'} : j); renderJobList(); }
+    }
+  } catch(e) {}
+}
+
+async function autoContinue() {
+  if (!autoSession) return;
+  document.getElementById('autoContinueBtn').style.display = 'none';
+  await api('/api/auto-apply/' + autoSession + '/continue', 'POST', {}).catch(() => {});
+}
+
+async function autoSubmit() {
+  if (!autoSession) return;
+  const btn = document.getElementById('autoSubmitBtn');
+  btn.disabled = true; btn.textContent = '⏳ Wird abgesendet...';
+  try {
+    const r = await api('/api/auto-apply/' + autoSession + '/submit', 'POST', {});
+    if (r.error) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)">❌ ${r.error}</div>`; btn.disabled=false; btn.textContent='✅ Jetzt absenden'; return; }
+    if (r.screenshot) {
+      document.getElementById('autoScreenImg').src = 'data:image/jpeg;base64,' + r.screenshot;
+      document.getElementById('autoScreenWrap').style.display = 'block';
+    }
+    document.getElementById('autoSteps').innerHTML += '<div style="color:var(--a)">🎉 Bewerbung erfolgreich abgesendet!</div>';
+    btn.style.display = 'none';
+    jobs = jobs.map(j => j.id===autoCurrentJobId ? {...j,status:'applied'} : j);
+    renderJobList();
+    clearInterval(autoPollIv); autoPollIv = null;
+  } catch(e) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)">❌ ${e.message}</div>`; btn.disabled=false; btn.textContent='✅ Jetzt absenden'; }
+}
+
+async function autoClose() {
+  clearInterval(autoPollIv); autoPollIv = null;
+  if (autoSession) { api('/api/auto-apply/' + autoSession + '/close', 'POST', {}).catch(()=>{}); autoSession = null; }
+  document.getElementById('autoOverlay').style.display = 'none';
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────
+async function uploadFile(input) {
+  const file = input.files[0]; if (!file) return;
+  toast('⏳ ' + file.name + ' wird hochgeladen...');
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const base64 = e.target.result.split(',')[1];
+    try {
+      await api('/api/upload', 'POST', { filename: file.name, data: base64 });
+      toast('✅ ' + file.name + ' hochgeladen');
+      loadFileList();
+    } catch(err) { toast('❌ Upload fehlgeschlagen: ' + err.message); }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+async function loadFileList() {
+  try {
+    const { files } = await api('/api/files', 'GET');
+    const el = document.getElementById('fileList');
+    if (!el) return;
+    if (!files || !files.length) {
+      el.innerHTML = '<div style="font-size:11px;color:var(--mu2);margin-bottom:6px">Noch keine Dateien – Lebenslauf als PDF hochladen!</div>';
+      return;
+    }
+    el.innerHTML = files.map(f =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;margin-bottom:5px">
+        <span style="font-size:16px">${/\.pdf$/i.test(f.name)?'📄':'📝'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+          <div style="font-size:10px;color:var(--mu2)">${(f.size/1024).toFixed(0)} KB</div>
+        </div>
+        <button onclick="deleteFile('${f.name.replace(/'/g,'\\\'')}')" style="background:none;border:none;color:var(--mu2);cursor:pointer;font-size:18px;padding:2px 6px;line-height:1">×</button>
+      </div>`
+    ).join('');
+  } catch(e) {}
+}
+
+async function deleteFile(name) {
+  if (!confirm('Datei löschen: ' + name + '?')) return;
+  await api('/api/files/' + encodeURIComponent(name), 'DELETE').catch(()=>{});
+  toast('🗑 Gelöscht');
+  loadFileList();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function toast(msg){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--bd);color:var(--tx);padding:10px 20px;border-radius:20px;font-size:12px;z-index:1000;white-space:nowrap;pointer-events:none;animation:slideUp .2s ease-out';
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init(){
+  loadDocs();
+  await loadSearchCfg();
+  await loadProfile();
+  loadFileList();
+  loadJobs();
+  setInterval(loadJobs,60000);
+}
+init();
+</script>
+<!-- ── AUTO-APPLY OVERLAY ─────────────────────────────────────────────── -->
+<div id="autoOverlay" style="display:none;position:fixed;inset:0;background:rgba(7,7,15,.97);z-index:300;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto">
+  <div style="width:100%;max-width:520px;padding-top:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="font-size:22px">🤖</div>
+      <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:.01em">Browser-Bewerbung</div>
+    </div>
+    <div id="autoJobLabel" style="font-size:11px;color:var(--mu2);margin-bottom:14px;padding-left:2px"></div>
+    <div id="autoSteps" style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;max-height:220px;overflow-y:auto;font-size:11px;line-height:2.1;font-family:'DM Mono',monospace;margin-bottom:12px;color:var(--mu2)"></div>
+    <div id="autoScreenWrap" style="display:none;margin-bottom:12px">
+      <div style="font-size:10px;color:var(--mu2);margin-bottom:5px">📸 Browser-Vorschau (klicken zum Vergrößern)</div>
+      <img id="autoScreenImg" style="width:100%;border-radius:8px;border:1px solid var(--bd);cursor:zoom-in" onclick="this.style.width=this.style.width==='100%'?'auto':'100%'" alt="Browser Screenshot"/>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button id="autoSubmitBtn" onclick="autoSubmit()" style="display:none;flex:2;background:linear-gradient(135deg,rgba(94,234,212,.85),rgba(244,114,182,.85));border:none;border-radius:10px;padding:13px;color:#07070f;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">✅ Jetzt absenden</button>
+      <button id="autoContinueBtn" onclick="autoContinue()" style="display:none;flex:2;background:rgba(129,140,248,.2);border:1px solid rgba(129,140,248,.5);border-radius:10px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">▶️ Fortsetzen</button>
+      <button onclick="autoClose()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:13px;color:var(--mu2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">✕ Schließen</button>
+    </div>
+    <div style="font-size:10px;color:var(--mu);text-align:center;line-height:1.6;padding:0 10px">
+      Der Browser ist sichtbar auf deinem Desktop · Du kannst dort alles prüfen und manuell anpassen
+    </div>
+  </div>
+</div>
+</body>
+</html>

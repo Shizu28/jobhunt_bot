@@ -1,0 +1,32 @@
+{
+  "keywords": [
+    "Junior Software Developer",
+    "Junior Frontend Developer",
+    "Junior Backend Developer",
+    "Junior Full Stack Developer",
+    "Softwareentwickler Junior",
+    "Junior React Developer",
+    "SAP Junior Consultant",
+    "Junior SAP Developer",
+    "UX Designer Junior",
+    "Junior UX Developer",
+    "Junior Embedded Developer",
+    "Quereinsteiger Softwareentwicklung",
+    "Junior IT Developer",
+    "Junior Web Developer"
+  ],
+  "location": "Schweinfurt",
+  "radius_km": 10,
+  "radius_car_km": 130,
+  "want_remote": true,
+  "want_local": true,
+  "want_car": true,
+  "sources": {
+    "aa": false,
+    "indeed": true,
+    "stepstone": true,
+    "linkedin": true,
+    "xing": true
+  },
+  "custom_sources": []
+}
