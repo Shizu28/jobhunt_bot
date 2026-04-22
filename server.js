@@ -244,61 +244,58 @@ async function scrapeArbeitsagentur(kw, sc) {
 }
 
 async function scrapeIndeed(kw, sc) {
-  // HTML scraping with mosaic-provider-jobcards embedded JSON
+  // Use RSS feed – avoids Cloudflare 403 that blocks the HTML frontend
   const jobs=[];
   try {
     const loc=sc.location||'Deutschland';
     const radius=Math.max(sc.radius_km||10,25);
     const params=new URLSearchParams({q:kw,l:loc,fromage:'14',radius:String(radius),sort:'date'});
-    const res=await fetchUrl(`https://de.indeed.com/jobs?${params}`,{
+    const res=await fetchUrl(`https://de.indeed.com/rss?${params}`,{
       timeout:20000,
       headers:{
-        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept':'application/rss+xml,application/xml,text/xml,*/*;q=0.8',
         'Accept-Language':'de-DE,de;q=0.9,en;q=0.8',
         'Referer':'https://de.indeed.com/',
-        'Cache-Control':'no-cache','Pragma':'no-cache'
+        'Cache-Control':'no-cache',
       }
     });
     if (res.status!==200){console.log(`  Indeed(${kw}): HTTP ${res.status}`);return jobs;}
-    // Try mosaic embedded JSON
-    const mm=res.body.match(/window\.mosaic\.providerData\["mosaic-provider-jobcards"\]\s*=\s*(\{[\s\S]*?\});\s*(?:window|<)/);
-    if (mm) {
-      try {
-        const d=JSON.parse(mm[1]);
-        const results=d?.metaData?.mosaicProviderJobCardsModel?.results||[];
-        for (const item of results.slice(0,15)) {
-          if (!item?.jobkey||!item?.jobTitle) continue;
-          const city=item.jobLocationCity||item.formattedLocation||loc;
-          const isRemote=/remote|homeoffice/i.test((item.jobTitle||'')+' '+city);
-          jobs.push({id:'in_'+item.jobkey,title:item.jobTitle,company:item.company||'Unbekannt',
-            location:isRemote?'Remote':city,remote:isRemote,local:!isRemote,
-            car:/dienstwagen|firmenwagen/i.test(item.snippet||''),salary:null,
-            posted:item.pubDate?new Date(item.pubDate*1000).toISOString().split('T')[0]:new Date().toISOString().split('T')[0],
-            keywords:extractKw(item.jobTitle+' '+(item.snippet||'')),
-            desc:(item.snippet||item.jobTitle||'').replace(/<[^>]+>/g,'').slice(0,350),
-            url:`https://de.indeed.com/viewjob?jk=${item.jobkey}`,
-            source:'Indeed',status:'new',match:0,scrapedAt:new Date().toISOString()});
-        }
-        if (jobs.length>0) return jobs;
-      } catch(e){}
-    }
-    // Fallback: parse data-jk + title from HTML
-    const jks=[...res.body.matchAll(/data-jk="([^"]{8,20})"/g)].map(m=>m[1]);
-    const titles=[...res.body.matchAll(/<span[^>]+title="([^"]{5,100})"[^>]*>/g)].map(m=>m[1]);
-    const companies=[...res.body.matchAll(/class="[^"]*companyName[^"]*"[^>]*>([\s\S]*?)<\/span>/g)].map(m=>m[1].replace(/<[^>]+>/g,'').trim());
-    const locRe=[...res.body.matchAll(/class="[^"]*companyLocation[^"]*"[^>]*>([\s\S]*?)<\/div>/g)].map(m=>m[1].replace(/<[^>]+>/g,'').trim());
-    for (let i=0;i<Math.min(jks.length,15);i++) {
-      const jk=jks[i]; const title=titles[i]||kw;
-      const company=companies[i]||'Unbekannt'; const jobLoc=locRe[i]||loc;
-      const isRemote=/remote|homeoffice/i.test(title+' '+jobLoc);
-      jobs.push({id:'in_'+jk,title,company,location:isRemote?'Remote':jobLoc,
-        remote:isRemote,local:!isRemote,car:false,salary:null,
-        posted:new Date().toISOString().split('T')[0],keywords:extractKw(title),
-        desc:`${title} bei ${company} (${jobLoc})`,
-        url:`https://de.indeed.com/viewjob?jk=${jk}`,
+    // Parse RSS/XML items
+    const items=[...res.body.matchAll(/<item>([\s\S]*?)<\/item>/g)];
+    for (const [,item] of items.slice(0,15)) {
+      // Title – CDATA or plain
+      const titleM=item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)||item.match(/<title>([\s\S]*?)<\/title>/);
+      if (!titleM) continue;
+      // Indeed title format: "Job Title - Company Name - City"
+      const parts=titleM[1].split(/ - /);
+      const title=(parts[0]||kw).trim();
+      const company=(parts[1]||'Unbekannt').trim();
+      const city=(parts[2]||loc).trim();
+      // <source> tag often holds company name
+      const srcM=item.match(/<source[^>]*>([\s\S]*?)<\/source>/);
+      const companyFinal=srcM?srcM[1].trim():company;
+      // <guid> has canonical viewjob URL
+      const guidM=item.match(/<guid[^>]*>([\s\S]*?)<\/guid>/);
+      const linkM=item.match(/<link>([\s\S]*?)<\/link>/);
+      const url=(guidM?guidM[1]:linkM?linkM[1]:'').trim();
+      const jkM=url.match(/jk=([a-zA-Z0-9]+)/);
+      if (!jkM) continue;
+      // Date
+      const dateM=item.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+      let posted=new Date().toISOString().split('T')[0];
+      if (dateM){try{posted=new Date(dateM[1]).toISOString().split('T')[0];}catch(e){}}
+      // Description snippet
+      const descM=item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/)||item.match(/<description>([\s\S]*?)<\/description>/);
+      const desc=descM?descM[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,350):`${title} bei ${companyFinal}`;
+      const isRemote=/remote|homeoffice/i.test(title+' '+city+' '+desc);
+      jobs.push({id:'in_'+jkM[1],title,company:companyFinal,
+        location:isRemote?'Remote':city,remote:isRemote,local:!isRemote,
+        car:/dienstwagen|firmenwagen/i.test(desc),salary:null,posted,
+        keywords:extractKw(title+' '+desc.slice(0,300)),desc,
+        url:`https://de.indeed.com/viewjob?jk=${jkM[1]}`,
         source:'Indeed',status:'new',match:0,scrapedAt:new Date().toISOString()});
     }
-  } catch(e){console.log(`  Indeed(${kw}):${e.message}`);}
+  } catch(e){console.log(`  Indeed(${kw}): ${e.message}`);}
   return jobs;
 }
 
@@ -320,19 +317,33 @@ async function scrapeStepstone(kw, sc) {
       .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     const locSlug=loc.replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
       .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    const res=await fetchUrl(
+    // Try slug URL first, fall back to query-param URL (StepStone changed layout)
+    let res=null;
+    for (const ssUrl of [
       `https://www.stepstone.de/jobs/${slug}/in-${locSlug}?radius=${radius}&sort=2`,
-      {timeout:20000,headers:{'Accept-Language':'de-DE,de;q=0.9','Cache-Control':'no-cache'}}
-    );
-    if (res.status!==200){console.log(`  SS(${kw}): HTTP ${res.status}`);return jobs;}
+      `https://www.stepstone.de/jobs/suche?q=${encodeURIComponent(kw)}&location=${encodeURIComponent(sc.location||'Deutschland')}&radius=${radius}&sort=2`
+    ]) {
+      try {
+        res=await fetchUrl(ssUrl,{timeout:20000,headers:{
+          'Accept':'text/html,application/xhtml+xml,*/*;q=0.8',
+          'Accept-Language':'de-DE,de;q=0.9','Cache-Control':'no-cache',
+          'Sec-Fetch-Dest':'document','Sec-Fetch-Mode':'navigate','Sec-Fetch-Site':'none'
+        }});
+        if (res.status===200) break;
+        console.log(`  SS(${kw}): HTTP ${res.status} (${ssUrl.includes('suche')?'query':'slug'})`); res=null;
+      } catch(e){ res=null; }
+    }
+    if (!res){return jobs;}
 
     // Primary: recursive search through __NEXT_DATA__
     const ndm=res.body.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
     if (ndm) {
       try {
         const nd=JSON.parse(ndm[1]);
-        const pred=item=>!!(item&&item.title&&typeof item.title==='string'&&item.title.length>3&&(item.company||item.employer||item.id||item.jobId));
+        const pred=item=>!!(item&&(item.title||item.jobTitle||item.headline)&&typeof (item.title||item.jobTitle||item.headline)==='string'&&(item.title||item.jobTitle||item.headline).length>3&&(item.company||item.employer||item.id||item.jobId||item.slug));
         const listings=deepFindArr(nd,pred)||[];
+        // Normalise field names
+        for (const it of listings) { if (!it.title) it.title=it.jobTitle||it.headline||''; }
         for (const item of listings.slice(0,15)) {
           if (!item||!item.title) continue;
           const company=(typeof item.company==='object'?item.company?.name:item.company)||item.employer?.name||item.companyName||'Unbekannt';
@@ -623,7 +634,7 @@ async function generateLetterPDF(letter, profile, job) {
     </div>
     <div class="date">${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}</div>
     <div class="subject">Bewerbung: ${escHtml(job.title||'')} bei ${escHtml(job.company||'')}</div>
-    ${letter.split('\n').filter(l=>l.trim()).map(l=>`<p>${escHtml(l)}</p>`).join('\n')}
+    ${letter.split('\n').filter(l=>l.trim()).map(l=>{const h=escHtml(l).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>');return `<p>${h}</p>`;}).join('\n')}
   </div></body></html>`;
   let b2 = null;
   try {
@@ -1333,7 +1344,7 @@ Skills: ${profile.skills||'Software Development'}
 Experience: ${profile.experience||'Career changer'}
 ${profile.bio?'About me: '+profile.bio:''}
 
-~270 words. Naturally include keywords: ${(job.keywords||[]).slice(0,3).join(', ')}. Output only the finished cover letter, no headings, no extra commentary.`;
+~270 words. Naturally include keywords: ${(job.keywords||[]).slice(0,3).join(', ')}. Output ONLY the body text of the cover letter (starting with the salutation like "Dear..." or "Hello,"). NO subject line, NO headings, NO markdown formatting, NO asterisks, NO ** markers.`;
   } else {
     prompt = `Du schreibst ein Bewerbungsanschreiben. WICHTIG: menschlich, persönlich, direkt. Kein KI-Stil, keine Floskeln wie "Mit großem Interesse bewerbe ich mich". Zeitgemäß, authentisch.
 
@@ -1348,9 +1359,11 @@ Skills: ${profile.skills||'Softwareentwicklung'}
 Erfahrung: ${profile.experience||'Quereinsteiger'}
 ${profile.bio?'Über mich: '+profile.bio:''}
 
-~270 Wörter. Keywords ${(job.keywords||[]).slice(0,3).join(', ')} natürlich einbauen. Nur das fertige Anschreiben, keine Überschriften.`;
+~270 Wörter. Keywords ${(job.keywords||[]).slice(0,3).join(', ')} natürlich einbauen. Ausgabe NUR der Brieftext (beginnt mit der Anrede wie "Hallo," oder "Sehr geehrte"). KEINE Betreff-Zeile, KEINE Überschriften, KEINE Markdown-Formatierung, KEINE Sternchen, KEINE ** Zeichen.`;
   }
-  return callAI([{ role: 'user', content: prompt }]);
+  const raw = await callAI([{ role: 'user', content: prompt }]);
+  // Strip any markdown bold/italic markers the AI added despite instructions
+  return raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').trim();
 }
 
 // Detect language from job text (simple word-frequency approach)
