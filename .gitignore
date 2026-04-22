@@ -4,4 +4,5 @@ uploads/
 browser-profile/
 jobhunter.db
 *.pdf
+.env
 
