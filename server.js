@@ -836,7 +836,6 @@ async function generateLetterPDF(letter, profile, job) {
       <div>${escHtml(profile.email||'')}</div>
     </div>
     <div class="date">${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}</div>
-    <div class="subject">Bewerbung: ${escHtml(job.title||'')} bei ${escHtml(job.company||'')}</div>
     ${letter.split('\n').filter(l=>l.trim()).map(l=>{const h=escHtml(l).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>');return `<p>${h}</p>`;}).join('\n')}
   </div></body></html>`;
   let b2 = null;
@@ -1800,7 +1799,7 @@ ${eduEN ? 'Education: '+eduEN : ''}
 ${profile.languages ? 'Languages: '+profile.languages : ''}
 ${profile.bio?'About me: '+profile.bio:''}
 
-FORMAT – output exactly in this order, nothing else:
+FORMAT – output exactly in this order, nothing else and make line 1 bold:
 Line 1: "Re: Application – ${job.title}" (or a natural English subject line variation)
 Line 2: (blank)
 Line 3+: Body text starting with salutation like "Dear Hiring Team," or "Hello,"
@@ -1822,7 +1821,7 @@ ${eduDE ? 'Ausbildung: '+eduDE : ''}
 ${profile.languages ? 'Sprachen: '+profile.languages : ''}
 ${profile.bio?'Über mich: '+profile.bio:''}
 
-FORMAT – gib genau das aus, nichts anderes:
+FORMAT – gib genau das aus, nichts anderes und mache Zeile 1 bitte bold:
 Zeile 1: "Bewerbung als ${job.title}" (oder eine natürliche Betreff-Variation)
 Zeile 2: (leer)
 Zeile 3+: Brieftext beginnend mit Anrede wie "Hallo," oder "Sehr geehrte Damen und Herren,"
