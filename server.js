@@ -199,7 +199,9 @@ function fetchUrl(targetUrl, options={}) {
     const parsed = new URL(targetUrl);
     const lib = parsed.protocol==='https:' ? https : http;
     const opts = {
-      hostname: parsed.hostname, path: parsed.pathname+parsed.search,
+      hostname: parsed.hostname,
+      port: parsed.port ? parseInt(parsed.port) : (parsed.protocol==='https:' ? 443 : 80),
+      path: parsed.pathname+parsed.search,
       method: options.method||'GET', timeout: options.timeout||18000,
       headers: {
         'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36',
@@ -1742,7 +1744,7 @@ async function callOllama(messages, maxTokens=1000) {
   }
   const res = await fetchUrl(`${CONFIG.OLLAMA_URL}/api/chat`, {
     method: 'POST',
-    timeout: 120000,
+    timeout: 600000,  // 10 min – 70B model can be slow
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: CONFIG.OLLAMA_MODEL,
@@ -2159,9 +2161,9 @@ const server=http.createServer(async(req,res)=>{
       saveEnvKey('ANTHROPIC_API_KEY', body.apiKey);
     }
     if (body.scanInterval) { CONFIG.SCAN_INTERVAL_MINUTES=parseInt(body.scanInterval); restartScheduler(); }
-    if (body.aiMode) CONFIG.AI_MODE=body.aiMode;
-    if (body.ollamaModel) CONFIG.OLLAMA_MODEL=body.ollamaModel;
-    if (body.ollamaUrl) CONFIG.OLLAMA_URL=body.ollamaUrl;
+    if (body.aiMode) { CONFIG.AI_MODE=body.aiMode; saveEnvKey('AI_MODE', body.aiMode); }
+    if (body.ollamaModel) { CONFIG.OLLAMA_MODEL=body.ollamaModel; saveEnvKey('OLLAMA_MODEL', body.ollamaModel); }
+    if (body.ollamaUrl) { CONFIG.OLLAMA_URL=body.ollamaUrl; saveEnvKey('OLLAMA_URL', body.ollamaUrl); }
     if (body.anthropicModel) CONFIG.ANTHROPIC_MODEL=body.anthropicModel;
     if (body.smtpHost    !== undefined) { CONFIG.SMTP_HOST=body.smtpHost;   saveEnvKey('SMTP_HOST',   body.smtpHost); }
     if (body.smtpPort    !== undefined) { CONFIG.SMTP_PORT=parseInt(body.smtpPort)||587; saveEnvKey('SMTP_PORT', String(CONFIG.SMTP_PORT)); }
@@ -2174,6 +2176,20 @@ const server=http.createServer(async(req,res)=>{
   if (pathname==='/api/ollama-status'&&req.method==='GET') {
     const status=await checkOllamaStatus();
     return sendJSON(res,{...status, currentModel:CONFIG.OLLAMA_MODEL, aiMode:CONFIG.AI_MODE});
+  }
+
+  if (pathname==='/api/test-ollama'&&req.method==='GET') {
+    const status=await checkOllamaStatus();
+    if (!status.running) return sendJSON(res,{ok:false,error:`Ollama nicht erreichbar (${CONFIG.OLLAMA_URL}). Bitte starten: ollama serve`});
+    if (!status.models.includes(CONFIG.OLLAMA_MODEL) && !status.models.some(m=>m.startsWith(CONFIG.OLLAMA_MODEL.split(':')[0]))) {
+      return sendJSON(res,{ok:false,error:`Modell '${CONFIG.OLLAMA_MODEL}' nicht gefunden. Installiert: ${status.models.join(', ')||'keine'}`});
+    }
+    try {
+      const reply = await callOllama([{role:'user',content:'Antworte nur mit OK.'}], 10);
+      return sendJSON(res,{ok:true,model:CONFIG.OLLAMA_MODEL,reply:reply.slice(0,80).trim(),models:status.models});
+    } catch(e) {
+      return sendJSON(res,{ok:false,error:e.message});
+    }
   }
 
   // ── PDF AUS BEARBEITETEM TEXT ─────────────────────────────────────────
@@ -2384,6 +2400,9 @@ function loadEnv(){
     if(process.env.SMTP_USER)CONFIG.SMTP_USER=process.env.SMTP_USER;
     if(process.env.SMTP_PASS)CONFIG.SMTP_PASS=process.env.SMTP_PASS;
     if(process.env.USER_EMAIL)CONFIG.USER_EMAIL=process.env.USER_EMAIL;
+    if(process.env.AI_MODE)CONFIG.AI_MODE=process.env.AI_MODE;
+    if(process.env.OLLAMA_MODEL)CONFIG.OLLAMA_MODEL=process.env.OLLAMA_MODEL;
+    if(process.env.OLLAMA_URL)CONFIG.OLLAMA_URL=process.env.OLLAMA_URL;
   }catch(e){}
 }
 

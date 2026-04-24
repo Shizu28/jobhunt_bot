@@ -412,6 +412,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <div id="ollamaStatus" style="padding:10px 12px;background:var(--s2);border-radius:9px;font-size:11px;line-height:1.7;color:var(--mu2)">
         Prüfe Ollama...
       </div>
+      <button onclick="testOllama()" style="width:100%;margin-top:8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25);border-radius:9px;padding:9px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer" id="ollamaTestBtn">🖥️ Ollama testen</button>
+      <div id="ollamaTestResult" style="display:none;margin-top:8px;padding:9px 12px;border-radius:9px;font-size:11px;line-height:1.6"></div>
       <div style="margin-top:10px;padding:10px 12px;background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.15);border-radius:9px;font-size:11px;line-height:1.7;color:var(--mu2)">
         <strong style="color:var(--a4)">Setup (einmalig):</strong><br/>
         1. <a href="https://ollama.com" target="_blank" style="color:var(--a)">ollama.com</a> → Download → installieren<br/>
@@ -758,12 +760,33 @@ function openLetter(id) {
 async function generateLetter(job) {
   const out=document.getElementById('lout');
   out.value=''; out.classList.add('cursor'); currentLetter='';
+  // Live progress timer
+  const isOllama = (typeof aiMode !== 'undefined' && aiMode === 'ollama');
+  let elapsed = 0;
+  const spinner = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
+  let spinIdx = 0;
+  const progressIv = setInterval(() => {
+    elapsed++;
+    spinIdx = (spinIdx+1) % spinner.length;
+    out.value = `${spinner[spinIdx]} ${isOllama ? 'Ollama (70B)' : 'KI'} generiert Anschreiben... (${elapsed}s)\n\nBitte warten – bei großen Modellen dauert das 2-5 Minuten.`;
+  }, 1000);
   try {
     const data=await api('/api/coverletter','POST',{job});
+    clearInterval(progressIv);
     if (data.error) throw new Error(data.error);
     const text=data.letter||''; currentLetter=text;
+    out.value='';
     let i=0; const iv=setInterval(()=>{if(i>=text.length){clearInterval(iv);out.classList.remove('cursor');return;}out.value+=text[i++];},10);
-  } catch(e) { out.classList.remove('cursor'); out.value='❌ '+e.message+'\n\nAPI Key unter Einstellungen eintragen.'; }
+  } catch(e) {
+    clearInterval(progressIv);
+    out.classList.remove('cursor');
+    const msg = e.message;
+    let hint = '';
+    if (msg.includes('Ollama') || msg.includes('ollama')) hint = '\n\nOllama starten: ollama serve';
+    else if (msg.includes('Timeout') || msg.includes('timeout')) hint = '\n\n' + (isOllama ? 'Ollama hat zu lang gebraucht. Modell evtl. noch am Laden – nochmal versuchen.' : 'API Key unter Einstellungen eintragen.');
+    else hint = '\n\nAPI Key unter Einstellungen eintragen.';
+    out.value='❌ '+msg+hint;
+  }
 }
 
 function regenLetter(){const j=jobs.find(j=>j.id===selectedJobId);if(j)generateLetter(j);}
@@ -1194,6 +1217,8 @@ function toggleAIMode() {
   document.getElementById('aiModeLabel').textContent = aiMode === 'anthropic' ? 'Anthropic API (Cloud)' : 'Ollama (Lokal · kostenlos)';
   document.getElementById('anthropicSec').style.display = aiMode === 'anthropic' ? 'block' : 'none';
   document.getElementById('ollamaSec').style.display = aiMode === 'ollama' ? 'block' : 'none';
+  // Persist mode immediately
+  api('/api/config','POST',{aiMode}).catch(()=>{});
   if (aiMode === 'ollama') loadOllamaStatus();
 }
 
@@ -1208,8 +1233,22 @@ async function loadOllamaStatus() {
       // Auto-select matching model in dropdown
       if (d.models.length) {
         const sel = document.getElementById('ollamaModel');
-        const match = d.models.find(m => m.includes('qwen2.5:32') || m.includes('qwen2.5:14') || m.includes('llama3.1:70') || m.includes('mistral'));
-        if (match) sel.value = match.startsWith('qwen2.5:32') ? 'qwen2.5:32b' : match.startsWith('qwen2.5:14') ? 'qwen2.5:14b' : match.startsWith('llama3.1:70') ? 'llama3.1:70b' : 'mistral:7b';
+        const cur = d.currentModel || '';
+        // Try to match dropdown options to installed model names
+        const opts = Array.from(sel.options).map(o => o.value);
+        const matched = opts.find(v => v !== 'custom' && d.models.some(m => m.includes(v.split(':')[0])));
+        if (cur) {
+          // See if current model matches a dropdown entry
+          const exactMatch = opts.find(v => v !== 'custom' && cur.startsWith(v.split(':')[0]));
+          if (exactMatch) sel.value = exactMatch;
+        } else if (matched) {
+          sel.value = matched;
+        }
+        // Save corrected model name back
+        const actualModel = d.models.find(m => sel.value !== 'custom' && m.includes(sel.value.split(':')[0]));
+        if (actualModel && actualModel !== d.currentModel) {
+          api('/api/config','POST',{ollamaModel: actualModel}).catch(()=>{});
+        }
       }
     } else {
       el.innerHTML = `<span style="color:var(--a3)">❌ Ollama nicht gefunden</span><br/>Bitte installieren und starten (ollama.com)`;
@@ -1217,6 +1256,39 @@ async function loadOllamaStatus() {
   } catch(e) {
     el.innerHTML = '<span style="color:var(--a3)">❌ Server nicht erreichbar</span>';
   }
+}
+
+async function testOllama() {
+  const btn = document.getElementById('ollamaTestBtn');
+  const res = document.getElementById('ollamaTestResult');
+  btn.disabled = true; btn.textContent = '⏳ Teste...';
+  res.style.display = 'none';
+  // Save current model selection first
+  let ollamaModel = document.getElementById('ollamaModel')?.value || 'llama3.1:70b-instruct-q4_K_M';
+  if (ollamaModel === 'custom') ollamaModel = document.getElementById('ollamaModelCustom').value || ollamaModel;
+  await api('/api/config','POST',{ollamaModel}).catch(()=>{});
+  try {
+    const d = await api('/api/test-ollama');
+    res.style.display = 'block';
+    if (d.ok) {
+      res.style.background = 'rgba(52,211,153,.1)';
+      res.style.border = '1px solid rgba(52,211,153,.2)';
+      res.style.color = 'var(--a)';
+      res.innerHTML = `✅ Ollama antwortet · Modell: <strong>${d.model}</strong><br/>Antwort: "${d.reply}"${d.models?.length>1?'<br/>Alle Modelle: '+d.models.join(', '):''}`;
+    } else {
+      res.style.background = 'rgba(248,113,113,.1)';
+      res.style.border = '1px solid rgba(248,113,113,.2)';
+      res.style.color = 'var(--a3)';
+      res.innerHTML = `❌ ${d.error}`;
+    }
+  } catch(e) {
+    res.style.display = 'block';
+    res.style.background = 'rgba(248,113,113,.1)';
+    res.style.border = '1px solid rgba(248,113,113,.2)';
+    res.style.color = 'var(--a3)';
+    res.innerHTML = `❌ ${e.message}`;
+  }
+  btn.disabled = false; btn.textContent = '🖥️ Ollama testen';
 }
 
 // Custom model input toggle
