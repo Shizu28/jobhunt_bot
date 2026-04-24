@@ -73,4 +73,4 @@ Damit der Server automatisch startet wenn du den PC einschaltest:
 → Settings → API Key eintragen → Speichern
 
 **Port bereits belegt**
-→ In server.js die Zeile `PORT: 3000` auf z.B. `3001` ändern
+→ In server.js die Zeile `PORT: 3000` auf z.B. `3000` ändern

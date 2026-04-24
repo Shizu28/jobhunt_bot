@@ -97,6 +97,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 </head>
 <body>
 
+<!-- ── AUTH OVERLAY ───────────────────────────────────────────────────── -->
+<div id="authOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:340px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="width:64px;height:64px;background:linear-gradient(135deg,#5eead4,#f472b6);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px">⚡</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:24px">Job<span style="color:var(--a)">Hunter</span> AI</div>
+      <div style="font-size:12px;color:var(--mu2);margin-top:8px">PIN eingeben</div>
+    </div>
+    <input id="authPinInput" type="password" inputmode="numeric" pattern="[0-9]*" class="inp" placeholder="PIN" style="font-size:20px;text-align:center;letter-spacing:6px;padding:16px;margin-bottom:12px" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn btnp" onclick="doLogin()">Einloggen</button>
+    <div id="authErr" style="text-align:center;color:#f87171;font-size:12px;margin-top:10px;display:none">Falscher PIN</div>
+  </div>
+</div>
+
 <div class="hdr">
   <div class="hrow">
     <div class="logo"><div class="lic">⚡</div><div class="ltx">Job<span>Hunter</span></div></div>
@@ -126,6 +140,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <button class="jtab" onclick="setJobTab('car',this)">🚗 Dienstwagen</button>
     <button class="jtab" onclick="setJobTab('applied',this)" id="tabApplied">📬 Beworben</button>
   </div>
+  <!-- Source filter chips -->
+  <div id="srcFilterBar" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 4px"></div>
   <div id="jobList"><div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px">Lade Jobs...</div></div>
 </div>
 
@@ -176,8 +192,41 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div style="margin-bottom:14px"><label class="lbl">Name</label><input class="inp" id="pName" placeholder="Max Mustermann"/></div>
     <div style="margin-bottom:14px"><label class="lbl">E-Mail</label><input class="inp" type="email" id="pEmail" placeholder="max@email.de"/></div>
     <div style="margin-bottom:14px"><label class="lbl">Telefon</label><input class="inp" type="tel" id="pPhone" placeholder="+49 9721..."/></div>
+    <div style="margin-bottom:14px;display:flex;gap:8px">
+      <div style="flex:2"><label class="lbl">Straße & Hausnummer</label><input class="inp" id="pStreet" placeholder="Musterstraße 12"/></div>
+      <div style="flex:1"><label class="lbl">PLZ</label><input class="inp" id="pZip" placeholder="97421"/></div>
+    </div>
     <div style="margin-bottom:14px"><label class="lbl">Berufserfahrung</label><input class="inp" id="pExp" placeholder="Quereinsteiger, 1–2 Jahre..."/></div>
     <div><label class="lbl">Kurzvorstellung</label><textarea class="inp" id="pBio" placeholder="Ich bin ein motivierter Entwickler..."></textarea></div>
+  </div>
+
+  <div class="stitle">Ausbildung</div>
+  <div class="card">
+    <div style="margin-bottom:14px;display:flex;gap:8px">
+      <div style="flex:2"><label class="lbl">Bachelorfach / Studiengang</label><input class="inp" id="pBachelorFach" placeholder="Informatik, Wirtschaftsinformatik..."/></div>
+      <div style="flex:1"><label class="lbl">Bachelornote</label><input class="inp" id="pBachelorNote" placeholder="1,8"/></div>
+    </div>
+    <div style="margin-bottom:14px;display:flex;gap:8px">
+      <div style="flex:2"><label class="lbl">Hochschule / Universität</label><input class="inp" id="pHochschule" placeholder="TH Würzburg-Schweinfurt..."/></div>
+      <div style="flex:1"><label class="lbl">Abschlussjahr</label><input class="inp" id="pAbschlussjahr" placeholder="2024"/></div>
+    </div>
+  </div>
+
+  <div class="stitle">Sprachkenntnisse</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:10px">z.B. "Deutsch (Muttersprache), Englisch (C1), Türkisch (Muttersprache)"</div>
+    <div id="langChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="langIn" placeholder="z.B. Englisch (C1)" style="flex:1;padding:9px 12px;font-size:12px" onkeydown="if(event.key==='Enter')addLang()"/>
+      <button onclick="addLang()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:9px 14px;color:var(--a4);font-size:18px;cursor:pointer">+</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">
+      <span onclick="quickAddLang('Deutsch (Muttersprache)',this)" style="font-size:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--mu2)">Deutsch (Muttersprache)</span>
+      <span onclick="quickAddLang('Englisch (C1)',this)" style="font-size:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--mu2)">Englisch (C1)</span>
+      <span onclick="quickAddLang('Englisch (B2)',this)" style="font-size:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--mu2)">Englisch (B2)</span>
+      <span onclick="quickAddLang('Türkisch (Muttersprache)',this)" style="font-size:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--mu2)">Türkisch (Muttersprache)</span>
+      <span onclick="quickAddLang('Französisch (A2)',this)" style="font-size:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--mu2)">Französisch (A2)</span>
+    </div>
   </div>
 
   <!-- SKILLS -->
@@ -265,6 +314,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
         <input type="file" accept=".pdf,.doc,.docx" style="display:none" onchange="uploadFile(this)">
       </label>
     </div>
+    <div style="margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">
+      <label class="lbl">✉️ Generierte Anschreiben</label>
+      <div id="letterList" style="min-height:10px"><div style="font-size:11px;color:var(--mu2)">Lade...</div></div>
+    </div>
   </div>
   <button class="btn btnp" style="margin-top:4px" onclick="saveProfile()">💾 Profil & Präferenzen speichern</button>
   <button onclick="browserSetup()" style="width:100%;margin-top:8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.3);border-radius:12px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
@@ -313,7 +366,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div class="trow"><div><div style="font-size:13px">💼 LinkedIn</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Öffentliche Stellenanzeigen</div></div><div class="tog" id="srcLI" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
     <div class="trow"><div><div style="font-size:13px">🔷 Xing</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DACH-Fokus</div></div><div class="tog" id="srcXi" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
     <div class="trow"><div><div style="font-size:13px">💻 Heise Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">IT-Fachkräfte · Deutschland</div></div><div class="tog on" id="srcHe" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">🔎 Google Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Suche nach Stellenanzeigen</div></div><div class="tog on" id="srcGo" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">🔎 Bing Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Suche nach Stellenanzeigen</div></div><div class="tog on" id="srcGo" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">🌍 Remotive</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">100% Remote-Jobs weltweit · Gratis-API</div></div><div class="tog on" id="srcRm" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">🇩🇪 Arbeitnow</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DE/EU Jobs · viele Remote · Gratis-API</div></div><div class="tog on" id="srcAn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
   </div>
 
   <!-- API & Interval -->
@@ -400,6 +455,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div style="margin-top:8px;font-size:10px;color:var(--mu);line-height:1.6">⚠️ Gmail: App-Passwort unter myaccount.google.com → Sicherheit → App-Passwörter<br/>⚠️ Outlook: App-Passwort aus Microsoft Konto-Sicherheitseinstellungen</div>
   </div>
 
+  <!-- Access PIN -->
+  <div class="stitle">🔐 Zugriffsschutz (PIN)</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">Schützt den Zugang vom PC und Handy. Leer lassen = kein Schutz.</div>
+    <label class="lbl">PIN (Zahlen, min. 4 Stellen)</label>
+    <input class="inp" id="accessPin" type="password" inputmode="numeric" pattern="[0-9]*" placeholder="z.B. 1234" style="margin-bottom:8px"/>
+    <button onclick="savePin()" style="width:100%;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);border-radius:9px;padding:9px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🔐 PIN speichern</button>
+  </div>
+
   <button class="btn btnp" style="margin-top:4px" onclick="saveSettings()">💾 Einstellungen speichern</button>
 
   <!-- Status -->
@@ -433,6 +497,8 @@ let jobTab='all';
 let scanInterval=60;
 let CONFIG_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 let selectedJobs = new Set(); // multi-select
+let authToken = localStorage.getItem('jh_token')||'';
+let disabledSources = new Set(); // sources toggled off by user
 
 // ── NAV ──────────────────────────────────────────────────────────────────
 function nav(name) {
@@ -445,9 +511,12 @@ function nav(name) {
 
 // ── API ───────────────────────────────────────────────────────────────────
 async function api(path, method='GET', body=null) {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = BASE + path + (authToken ? sep+'token='+encodeURIComponent(authToken) : '');
   const opts={method,headers:{'Content-Type':'application/json'}};
   if (body) opts.body=JSON.stringify(body);
-  const res=await fetch(BASE+path, opts);
+  const res=await fetch(url, opts);
+  if (res.status===401) { showAuthOverlay(); throw new Error('Nicht autorisiert'); }
   return res.json();
 }
 
@@ -459,7 +528,7 @@ async function loadJobs() {
     document.getElementById('connBanner').style.display='none';
     document.getElementById('dot').style.background='var(--a)';
     document.getElementById('scanTxt').textContent=data.lastScan?'Scan: '+timeSince(data.lastScan):'Bereit';
-    renderStats(data); renderJobList();
+    renderStats(data); renderSourceFilter(); renderJobList();
   } catch(e) {
     document.getElementById('connBanner').style.display='block';
     document.getElementById('dot').style.background='var(--a3)';
@@ -487,6 +556,27 @@ function setJobTab(tab, el) {
   renderJobList();
 }
 
+function renderSourceFilter() {
+  const bar = document.getElementById('srcFilterBar');
+  if (!bar) return;
+  const sources = [...new Set(jobs.map(j=>j.source).filter(Boolean))].sort();
+  if (sources.length <= 1) { bar.style.display='none'; return; }
+  bar.style.display='flex';
+  const srcIcons = {'Arbeitsagentur':'🏢','StepStone':'📌','Heise Jobs':'💻','LinkedIn':'💼','Indeed':'🔍','Arbeitnow':'🇩🇪','Remotive':'🌐','Bing':'🔎','Xing':'🔷'};
+  bar.innerHTML = sources.map(src => {
+    const off = disabledSources.has(src);
+    const icon = srcIcons[src]||'•';
+    return `<button onclick="toggleSource('${src}')" style="padding:4px 10px;border-radius:20px;border:1px solid ${off?'rgba(255,255,255,.1)':'rgba(94,234,212,.4)'};background:${off?'rgba(255,255,255,.04)':'rgba(94,234,212,.12)'};color:${off?'var(--mu)':'var(--a)'};font-size:10px;font-family:\'DM Mono\',monospace;cursor:pointer;transition:all .15s;white-space:nowrap">${icon} ${src}</button>`;
+  }).join('');
+}
+
+function toggleSource(src) {
+  if (disabledSources.has(src)) disabledSources.delete(src);
+  else disabledSources.add(src);
+  renderSourceFilter();
+  renderJobList();
+}
+
 function renderJobList() {
   // Update applied tab badge
   const appliedCount = jobs.filter(j => j.status==='applied' || j.status==='interview').length;
@@ -498,7 +588,9 @@ function renderJobList() {
     filtered = jobs.filter(j => j.status==='applied' || j.status==='interview');
   } else {
     // All other tabs: exclude applied/interview jobs
-    const active = jobs.filter(j => j.status !== 'applied' && j.status !== 'interview');
+    let active = jobs.filter(j => j.status !== 'applied' && j.status !== 'interview');
+    // Apply source filter
+    if (disabledSources.size > 0) active = active.filter(j => !disabledSources.has(j.source));
     if      (jobTab==='remote') filtered = active.filter(j=>j.remote);
     else if (jobTab==='local')  filtered = active.filter(j=>j.local&&!j.remote);
     else if (jobTab==='car')    filtered = active.filter(j=>j.car);
@@ -620,11 +712,33 @@ function handleApplyResult(r) {
 async function triggerScan() {
   document.getElementById('pbar').style.display='block';
   document.getElementById('scanTxt').textContent='Scannt...';
-  let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*4,88);document.getElementById('pfill').style.width=p+'%';},500);
+  let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*2,88);document.getElementById('pfill').style.width=p+'%';},800);
   try {
-    await api('/api/scan','POST');
-    toast('🔍 Scan läuft auf dem PC...');
-    setTimeout(async()=>{clearInterval(iv);document.getElementById('pfill').style.width='100%';await loadJobs();setTimeout(()=>{document.getElementById('pbar').style.display='none';},800);},10000);
+    // Always persist current keywords to server before scanning
+    await api('/api/search','POST',{...searchCfg});
+    const startRes = await api('/api/scan','POST');
+    if (startRes?.message?.includes('läuft bereits')) {
+      toast('🔄 Scan läuft bereits – warte auf Ergebnis...');
+    } else {
+      toast('🔍 Scan gestartet (' + (searchCfg.keywords||[]).length + ' Keywords)...');
+    }
+    // Poll /api/status every 8s until scan is done
+    const poll = setInterval(async()=>{
+      try {
+        const st = await api('/api/status');
+        p = Math.min(p + 1, 95);
+        document.getElementById('pfill').style.width = p + '%';
+        if (!st.scanRunning) {
+          clearInterval(poll); clearInterval(iv);
+          document.getElementById('pfill').style.width='100%';
+          await loadJobs();
+          setTimeout(()=>{ document.getElementById('pbar').style.display='none'; },800);
+          toast('✅ Scan fertig · ' + (st.newThisScan||0) + ' neue Jobs');
+        }
+      } catch(e) {}
+    }, 8000);
+    // Safety timeout after 35 min
+    setTimeout(()=>{ clearInterval(poll); clearInterval(iv); document.getElementById('pbar').style.display='none'; }, 35*60*1000);
   } catch(e) { clearInterval(iv); document.getElementById('pbar').style.display='none'; toast('❌ Server nicht erreichbar'); }
 }
 
@@ -844,23 +958,65 @@ function renderDocs() {
 function removeDoc(i){docs.splice(i,1);renderDocs();saveDocs();}
 
 function handleDocs(input) {
-  Array.from(input.files).forEach(f=>{const dt=guessType(f.name);docs.push({name:f.name,size:f.size<1048576?(f.size/1024).toFixed(0)+' KB':(f.size/1048576).toFixed(1)+' MB',type:dt.l,emoji:dt.e});});
-  renderDocs(); saveDocs(); toast(`✓ ${input.files.length} Dokument(e) hinzugefügt`); input.value='';
+  Array.from(input.files).forEach(f=>{
+    const dt=guessType(f.name);
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      const base64=e.target.result.split(',')[1];
+      try {
+        await api('/api/upload','POST',{filename:f.name,data:base64});
+        docs.push({name:f.name,size:f.size<1048576?(f.size/1024).toFixed(0)+' KB':(f.size/1048576).toFixed(1)+' MB',type:dt.l,emoji:dt.e});
+        renderDocs(); saveDocs();
+      } catch(err){ toast('❌ Upload fehlgeschlagen: '+err.message); }
+    };
+    reader.readAsDataURL(f);
+  });
+  toast(`⏳ ${input.files.length} Dokument(e) werden hochgeladen...`);
+  input.value='';
 }
 
 function saveDocs(){try{localStorage.setItem('jh_docs',JSON.stringify(docs));}catch(e){}}
 function loadDocs(){try{const d=localStorage.getItem('jh_docs');if(d){docs=JSON.parse(d);renderDocs();}}catch(e){}}
 
 // ── PROFILE ───────────────────────────────────────────────────────────────
+let langSet = new Set();
+
+function renderLangs() {
+  const c = document.getElementById('langChips'); if (!c) return;
+  c.innerHTML = '';
+  langSet.forEach(l => {
+    const s = document.createElement('span');
+    s.style.cssText = 'background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--a4);cursor:pointer';
+    s.textContent = l + ' ✕';
+    s.onclick = () => { langSet.delete(l); renderLangs(); };
+    c.appendChild(s);
+  });
+}
+function addLang() {
+  const el = document.getElementById('langIn');
+  const v = el.value.trim(); if (!v) return;
+  langSet.add(v); el.value = ''; renderLangs();
+}
+function quickAddLang(l, el) {
+  langSet.add(l); if (el) el.style.display = 'none'; renderLangs();
+}
+
 async function loadProfile() {
   try {
     const p=await api('/api/profile');
     if(p.name)document.getElementById('pName').value=p.name;
     if(p.email)document.getElementById('pEmail').value=p.email;
     if(p.phone)document.getElementById('pPhone').value=p.phone;
+    if(p.street)document.getElementById('pStreet').value=p.street;
+    if(p.zip)document.getElementById('pZip').value=p.zip;
     if(p.experience)document.getElementById('pExp').value=p.experience;
     if(p.bio)document.getElementById('pBio').value=p.bio;
     if(p.location)document.getElementById('pLocation').value=p.location;
+    if(p.bachelorFach)document.getElementById('pBachelorFach').value=p.bachelorFach;
+    if(p.bachelorNote)document.getElementById('pBachelorNote').value=p.bachelorNote;
+    if(p.hochschule)document.getElementById('pHochschule').value=p.hochschule;
+    if(p.abschlussjahr)document.getElementById('pAbschlussjahr').value=p.abschlussjahr;
+    if(p.languages){ p.languages.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>langSet.add(s)); renderLangs(); }
     if(p.skills){p.skills.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>skillSet.add(s));}
     if(p.cvSkills){p.cvSkills.forEach(s=>{cvSkills.add(s);skillSet.add(s);});}
     renderSkills();
@@ -886,9 +1042,16 @@ async function saveProfile() {
     name:document.getElementById('pName').value,
     email:document.getElementById('pEmail').value,
     phone:document.getElementById('pPhone').value,
+    street:document.getElementById('pStreet').value,
+    zip:document.getElementById('pZip').value,
     experience:document.getElementById('pExp').value,
     bio:document.getElementById('pBio').value,
     location:document.getElementById('pLocation').value,
+    bachelorFach:document.getElementById('pBachelorFach').value,
+    bachelorNote:document.getElementById('pBachelorNote').value,
+    hochschule:document.getElementById('pHochschule').value,
+    abschlussjahr:document.getElementById('pAbschlussjahr').value,
+    languages:[...langSet].join(', '),
     skills:[...skillSet].join(', '),
     cvSkills:[...cvSkills],
     want_remote:document.getElementById('togRemote').classList.contains('on'),
@@ -922,6 +1085,8 @@ async function loadSearchCfg() {
     set('srcXi', s.xing, false);
     set('srcHe', s.heise, true);
     set('srcGo', s.google, true);
+    set('srcRm', s.remotive, true);
+    set('srcAn', s.arbeitnow, true);
   } catch(e){}
 }
 
@@ -933,17 +1098,19 @@ function renderKwList() {
   sugg.innerHTML=KW_SUGGESTIONS.filter(s=>!(searchCfg.keywords||[]).includes(s)).slice(0,8).map(s=>`<span onclick="quickAddKw('${s.replace(/'/g,"\\'")}',this)" style="font-size:10px;padding:3px 9px;border-radius:5px;background:var(--s2);color:var(--mu2);cursor:pointer;border:1px solid var(--bd);margin:2px">${s}</span>`).join('');
 }
 
-function removeKw(i){searchCfg.keywords.splice(i,1);renderKwList();}
+function removeKw(i){searchCfg.keywords.splice(i,1);renderKwList();api('/api/search','POST',{...searchCfg}).catch(()=>{});}
 
 function addKw(){
   const v=document.getElementById('kwIn').value.trim(); if(!v) return;
   if(!searchCfg.keywords.includes(v)) searchCfg.keywords.push(v);
   document.getElementById('kwIn').value=''; renderKwList();
+  api('/api/search','POST',{...searchCfg}).catch(()=>{});
 }
 
 function quickAddKw(kw, el){
   if(!searchCfg.keywords.includes(kw)) searchCfg.keywords.push(kw);
   el.style.display='none'; renderKwList();
+  api('/api/search','POST',{...searchCfg}).catch(()=>{});
 }
 
 function renderSourceList() {
@@ -1138,6 +1305,8 @@ async function saveSettings(){
     xing:      document.getElementById('srcXi')?.classList.contains('on') ?? false,
     heise:     document.getElementById('srcHe')?.classList.contains('on') ?? true,
     google:    document.getElementById('srcGo')?.classList.contains('on') ?? true,
+    remotive:  document.getElementById('srcRm')?.classList.contains('on') ?? true,
+    arbeitnow: document.getElementById('srcAn')?.classList.contains('on') ?? true,
   };
   // Collect SMTP settings
   const smtpHost = document.getElementById('smtpHost').value.trim();
@@ -1172,6 +1341,23 @@ async function saveSettings(){
   } catch(e) { toast('❌ Server nicht erreichbar'); }
 }
 
+async function savePin() {
+  const pin = (document.getElementById('accessPin').value||'').trim();
+  if (pin && pin.length < 4) { toast('❌ PIN muss mindestens 4 Stellen haben'); return; }
+  try {
+    await api('/api/config','POST',{ accessPin: pin });
+    authToken = '';
+    localStorage.removeItem('jh_token');
+    document.getElementById('accessPin').value='';
+    if (pin) {
+      toast('🔐 PIN gesetzt · Bitte neu einloggen');
+      setTimeout(()=>{ showAuthOverlay(); },800);
+    } else {
+      toast('🔓 PIN entfernt · Server ist jetzt offen');
+    }
+  } catch(e) { toast('❌ '+e.message); }
+}
+
 // ── RADIUS SYNC ───────────────────────────────────────────────────────────
 function syncRadius(which, raw) {
   const val=Math.max(1,parseInt(raw)||1);
@@ -1194,14 +1380,41 @@ async function browserSetup() {
 }
 
 // ── AUTO-APPLY ────────────────────────────────────────────────────────────
+let _autoLetterJob = null; // track job context for auto-apply PDF
+
+async function downloadAutoLetterPdf() {
+  const text = document.getElementById('autoLetterText').textContent;
+  if (!text || text.trim().length < 20) { toast('❌ Kein Anschreiben vorhanden'); return; }
+  const btn = document.getElementById('autoLetterPdfBtn');
+  btn.disabled = true; btn.textContent = '⏳...';
+  try {
+    const r = await api('/api/generate-pdf','POST',{ letter:text, title:_autoLetterJob?.title||'', company:_autoLetterJob?.company||'' });
+    if (r.error) throw new Error(r.error);
+    const bytes = atob(r.pdfBase64);
+    const buf = new Uint8Array(bytes.length);
+    for (let i=0; i<bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+    const blob = new Blob([buf], { type:'application/pdf' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Anschreiben_${(_autoLetterJob?.company||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]/g,'_')}.pdf`;
+    a.click(); URL.revokeObjectURL(a.href);
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📄 PDF'; }
+}
+
 let autoSession = null, autoPollIv = null, autoCurrentJobId = null;
 
 async function autoApply(jobId) {
   autoCurrentJobId = jobId;
   const job = jobs.find(j => j.id === jobId);
+  _autoLetterJob = job || null;
   document.getElementById('autoJobLabel').textContent = (job?.title||'') + (job?.company ? ' · ' + job.company : '');
   document.getElementById('autoSteps').innerHTML = '<div style="color:var(--a)">⏳ Startet...</div>';
   document.getElementById('autoScreenWrap').style.display = 'none';
+  const lp = document.getElementById('autoLetterPanel');
+  const lt = document.getElementById('autoLetterText');
+  if (lp) lp.style.display = 'none';
+  if (lt) lt.textContent = '';
   const sb = document.getElementById('autoSubmitBtn');
   sb.style.display = 'none'; sb.disabled = false; sb.textContent = '✅ Jetzt absenden';
   document.getElementById('autoOverlay').style.display = 'flex';
@@ -1240,6 +1453,11 @@ async function pollAutoSession() {
     const continueBtn = document.getElementById('autoContinueBtn');
     submitBtn.style.display = r.status === 'ready' ? 'block' : 'none';
     continueBtn.style.display = r.status === 'waiting_manual' ? 'block' : 'none';
+    if (r.letter) {
+      const lp = document.getElementById('autoLetterPanel');
+      const lt = document.getElementById('autoLetterText');
+      if (lp && lt && !lt.textContent) { lt.textContent = r.letter; lp.style.display = 'block'; }
+    }
     if (['submitted','closed','error','gone'].includes(r.status)) {
       clearInterval(autoPollIv); autoPollIv = null;
       if (r.status === 'submitted') { jobs = jobs.map(j => j.id===autoCurrentJobId ? {...j,status:'applied'} : j); renderJobList(); }
@@ -1276,6 +1494,67 @@ async function autoClose() {
   clearInterval(autoPollIv); autoPollIv = null;
   if (autoSession) { api('/api/auto-apply/' + autoSession + '/close', 'POST', {}).catch(()=>{}); autoSession = null; }
   document.getElementById('autoOverlay').style.display = 'none';
+  stopVoice();
+}
+
+async function sendInstruct() {
+  if (!autoSession) return;
+  const inp = document.getElementById('autoInstructInput');
+  const text = (inp.value||'').trim();
+  if (!text) return;
+  inp.value = '';
+  await api('/api/auto-apply/' + autoSession + '/instruct', 'POST', { text }).catch(()=>{});
+}
+
+let _voiceRecog = null, _voiceActive = false;
+function toggleVoice() {
+  if (_voiceActive) { stopVoice(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('❌ Spracherkennung nur in Chrome/Edge am PC (localhost) verfügbar'); return; }
+  _voiceRecog = new SR();
+  _voiceRecog.lang = 'de-DE';
+  _voiceRecog.continuous = false;
+  _voiceRecog.interimResults = false;
+  _voiceRecog.onresult = e => {
+    const text = e.results[0][0].transcript;
+    document.getElementById('autoInstructInput').value = text;
+    sendInstruct();
+  };
+  _voiceRecog.onend = () => { _voiceActive = false; const vb = document.getElementById('autoVoiceBtn'); if(vb) { vb.textContent='🎙️'; vb.style.background='rgba(129,140,248,.15)'; } };
+  _voiceRecog.onerror = (ev) => {
+    const msgs = {
+      'not-allowed': '🎙️ Mikrofon-Zugriff verweigert – bitte in Browser-Einstellungen erlauben',
+      'network': '🎙️ Kein Internet – Speech API benötigt Verbindung',
+      'no-speech': '🎙️ Keine Sprache erkannt – nochmal versuchen',
+      'service-not-allowed': '🎙️ Speech Service nicht verfügbar (nur HTTPS oder localhost)',
+      'audio-capture': '🎙️ Kein Mikrofon gefunden',
+    };
+    toast(msgs[ev.error] || `🎙️ Fehler: ${ev.error}`);
+    stopVoice();
+  };
+  _voiceRecog.start();
+  _voiceActive = true;
+  const vb = document.getElementById('autoVoiceBtn');
+  if (vb) { vb.textContent='⏹️'; vb.style.background='rgba(244,114,182,.25)'; }
+}
+function stopVoice() {
+  _voiceActive = false;
+  try { _voiceRecog?.stop(); } catch(e) {}
+  const vb = document.getElementById('autoVoiceBtn');
+  if (vb) { vb.textContent='🎙️'; vb.style.background='rgba(129,140,248,.15)'; }
+}
+
+function copyLetter() {
+  const t = document.getElementById('autoLetterText')?.textContent||'';
+  navigator.clipboard.writeText(t).then(()=>toast('📋 Anschreiben kopiert!')).catch(()=>{});
+}
+function toggleLetter() {
+  const body = document.getElementById('autoLetterBody');
+  const btn = document.getElementById('autoLetterToggle');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '▼ anzeigen' : '▲ verbergen';
 }
 
 // ── FILE UPLOAD ───────────────────────────────────────────────────────────
@@ -1318,10 +1597,36 @@ async function loadFileList() {
 }
 
 async function deleteFile(name) {
-  if (!confirm('Datei löschen: ' + name + '?')) return;
   await api('/api/files/' + encodeURIComponent(name), 'DELETE').catch(()=>{});
   toast('🗑 Gelöscht');
   loadFileList();
+}
+
+async function loadLetterList() {
+  try {
+    const { letters } = await api('/api/letters', 'GET');
+    const el = document.getElementById('letterList');
+    if (!el) return;
+    if (!letters || !letters.length) { el.innerHTML = '<div style="font-size:11px;color:var(--mu2)">Noch keine generierten Anschreiben</div>'; return; }
+    el.innerHTML = letters.map(f => {
+      const dt = f.created ? new Date(f.created).toLocaleDateString('de-DE') : '';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;margin-bottom:5px">
+        <span style="font-size:16px">✉️</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name.replace('_anschreiben_','').replace('.pdf','')}</div>
+          <div style="font-size:10px;color:var(--mu2)">${dt} · ${(f.size/1024).toFixed(0)} KB</div>
+        </div>
+        <a href="${BASE}/uploads/${encodeURIComponent(f.name)}${authToken?'?token='+encodeURIComponent(authToken):''}" download="${f.name}" style="background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.2);border-radius:7px;padding:5px 9px;color:var(--a);font-size:11px;text-decoration:none;flex-shrink:0">↓</a>
+        <button onclick="deleteLetter('${f.name.replace(/'/g,'\\\'')}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0">✕</button>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function deleteLetter(name) {
+  await api('/api/files/'+encodeURIComponent(name),'DELETE').catch(()=>{});
+  toast('🗑 Anschreiben gelöscht');
+  loadLetterList();
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
@@ -1332,14 +1637,60 @@ function toast(msg){
   document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────
-async function init(){
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function showAuthOverlay() {
+  document.getElementById('authOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('authPinInput').focus(),100);
+}
+function hideAuthOverlay() { document.getElementById('authOverlay').style.display='none'; }
+
+async function doLogin() {
+  const pin = document.getElementById('authPinInput').value.trim();
+  try {
+    const r = await fetch(BASE+'/api/auth/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});
+    const d = await r.json();
+    if (d.ok) {
+      authToken = d.token||'';
+      localStorage.setItem('jh_token', authToken);
+      document.getElementById('authErr').style.display='none';
+      hideAuthOverlay();
+      startApp();
+    } else {
+      document.getElementById('authErr').style.display='block';
+      document.getElementById('authPinInput').value='';
+      document.getElementById('authPinInput').focus();
+    }
+  } catch(e) { toast('❌ Verbindungsfehler'); }
+}
+
+async function checkAuthAndStart() {
+  try {
+    const r = await fetch(BASE+'/api/auth/status');
+    const d = await r.json();
+    if (!d.authRequired) { hideAuthOverlay(); startApp(); return; }
+    // Auth required — check if we have a valid token
+    if (authToken) {
+      const tr = await fetch(BASE+'/api/jobs?token='+encodeURIComponent(authToken));
+      if (tr.status!==401) { hideAuthOverlay(); startApp(); return; }
+      authToken=''; localStorage.removeItem('jh_token');
+    }
+    showAuthOverlay();
+  } catch(e) { startApp(); } // server unreachable → show app anyway
+}
+
+async function startApp() {
   loadDocs();
   await loadSearchCfg();
   await loadProfile();
   loadFileList();
+  loadLetterList();
   loadJobs();
   setInterval(loadJobs,60000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init(){
+  checkAuthAndStart();
 }
 init();
 </script>
@@ -1360,6 +1711,26 @@ init();
       <button id="autoSubmitBtn" onclick="autoSubmit()" style="display:none;flex:2;background:linear-gradient(135deg,rgba(94,234,212,.85),rgba(244,114,182,.85));border:none;border-radius:10px;padding:13px;color:#07070f;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">✅ Jetzt absenden</button>
       <button id="autoContinueBtn" onclick="autoContinue()" style="display:none;flex:2;background:rgba(129,140,248,.2);border:1px solid rgba(129,140,248,.5);border-radius:10px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">▶️ Fortsetzen</button>
       <button onclick="autoClose()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:13px;color:var(--mu2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">✕ Schließen</button>
+    </div>
+    <!-- Anweisung an Bot -->
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="autoInstructInput" type="text" placeholder="Anweisung an Bot… z.B. 'Klick auf Bewerben'" onkeydown="if(event.key==='Enter')sendInstruct()" style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;color:var(--tx);font-size:12px;font-family:'DM Mono',monospace;outline:none"/>
+      <button onclick="sendInstruct()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:10px;padding:10px 14px;color:var(--a);font-size:13px;cursor:pointer;white-space:nowrap">➤</button>
+      <button id="autoVoiceBtn" onclick="toggleVoice()" style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:10px 13px;font-size:15px;cursor:pointer">🎙️</button>
+    </div>
+    <!-- Anschreiben-Panel -->
+    <div id="autoLetterPanel" style="display:none;background:var(--s1);border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd)">
+        <span style="font-size:11px;color:var(--mu2)">📝 Generiertes Anschreiben</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="copyLetter()" style="background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.2);border-radius:7px;padding:4px 10px;color:var(--a);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">📋 Kopieren</button>
+          <button id="autoLetterPdfBtn" onclick="downloadAutoLetterPdf()" style="background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.2);border-radius:7px;padding:4px 10px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">📄 PDF</button>
+          <button id="autoLetterToggle" onclick="toggleLetter()" style="background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">▲ verbergen</button>
+        </div>
+      </div>
+      <div id="autoLetterBody" style="display:block">
+        <pre id="autoLetterText" style="padding:12px 14px;font-size:11px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--tx);font-family:'DM Mono',monospace;margin:0"></pre>
+      </div>
     </div>
     <div style="font-size:10px;color:var(--mu);text-align:center;line-height:1.6;padding:0 10px">
       Der Browser ist sichtbar auf deinem Desktop · Du kannst dort alles prüfen und manuell anpassen
