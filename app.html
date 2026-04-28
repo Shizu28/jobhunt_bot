@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8"/>
@@ -6,61 +6,89 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="JobHunter"/>
-<meta name="theme-color" content="#07070f"/>
+<meta name="theme-color" content="#f4ede0"/>
 <title>JobHunter AI</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer onload="lucide.createIcons()"></script>
 <style>
-:root{--bg:#07070f;--s1:#0f0f1a;--s2:#161624;--bd:rgba(255,255,255,.07);--a:#5eead4;--a2:#f472b6;--a3:#fbbf24;--a4:#818cf8;--tx:#e2e8f0;--mu:#475569;--mu2:#64748b}
+/*  Autumn palette  */
+:root{
+  --bg:#f4ede0;       /* warm cream */
+  --s1:#fffcf7;       /* card white */
+  --s2:#ede5d5;       /* input / secondary surface */
+  --bd:rgba(150,100,50,.2);
+  --a:#b8623e;        /* terracotta (deepened for light bg) */
+  --a2:#9a7820;       /* golden amber (deepened) */
+  --a3:#4e7830;       /* olive (deepened) */
+  --a4:#7a527a;       /* mauve (deepened) */
+  --tx:#1a1008;       /* near-black brown */
+  --mu:#6a5030;       /* muted bark */
+  --mu2:#8a6838;      /* warm medium brown */
+  --ac:#b8623e;       /* accent */
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg)}
 body{font-family:'DM Mono',monospace;color:var(--tx);display:flex;flex-direction:column;height:100dvh}
 .screen{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 130px}
 .screen.active{display:block}
 /* header */
-.hdr{padding:calc(env(safe-area-inset-top)+14px) 20px 14px;background:rgba(7,7,15,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);flex-shrink:0;z-index:50}
-.hrow{display:flex;align-items:center;justify-content:space-between}
+.hdr{padding:calc(env(safe-area-inset-top)+12px) 18px 0;background:rgba(244,237,224,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);flex-shrink:0;z-index:50;box-shadow:0 1px 0 var(--bd)}
+.hrow{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px}
 .logo{display:flex;align-items:center;gap:10px}
-.lic{width:34px;height:34px;background:linear-gradient(135deg,#5eead4,#f472b6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px}
-.ltx{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:-.03em}
+.lic{width:32px;height:32px;background:var(--a);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-family:'Syne',sans-serif;font-weight:800;color:#fff}
+.ltx{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.02em;color:var(--tx)}
 .ltx span{color:var(--a)}
-.badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);padding:4px 10px;border-radius:20px}
+.badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--mu2);background:var(--s2);border:1px solid var(--bd);padding:4px 10px;border-radius:4px}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--a);animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.pbar{height:3px;background:var(--s2);overflow:hidden;margin-top:8px}
-.pfill{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--a2));transition:width .3s}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
+.pbar{height:2px;background:var(--s2);overflow:hidden}
+.pfill{height:100%;width:0%;background:var(--a);transition:width .4s}
+/* breadcrumb */
+.breadcrumb{font-size:10px;color:var(--mu);padding:6px 0 8px;letter-spacing:.04em;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:4px;min-height:30px}
+.breadcrumb span{color:var(--mu2)}
+.breadcrumb b{color:var(--a);font-weight:600}
+.bc-sep{color:var(--bd);font-size:12px;line-height:1;margin:0 1px}
+.bc-link{color:var(--mu2);cursor:pointer;text-decoration:none;padding:2px 4px;border-radius:4px;transition:background .12s,color .12s}
+.bc-link:hover{background:var(--s2);color:var(--a)}
+.bc-back{display:flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--bd);border-radius:5px;padding:3px 9px 3px 6px;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:background .12s,color .12s;margin-right:6px;flex-shrink:0}
+.bc-back:hover{background:var(--s1);color:var(--a)}
+.bc-back svg{flex-shrink:0}
 /* bottom nav */
-.bnav{padding:10px 6px calc(env(safe-area-inset-bottom)+10px);background:rgba(7,7,15,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bd);display:flex;flex-shrink:0;z-index:50}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--mu);font-family:'DM Mono',monospace}
-.nb.active{color:var(--a)}.nb .ni{font-size:20px}.nb .nl{font-size:9px;letter-spacing:.04em}
+.bnav{padding:8px 4px calc(env(safe-area-inset-bottom)+8px);background:rgba(244,237,224,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--bd);display:flex;flex-shrink:0;z-index:50;box-shadow:0 -1px 0 var(--bd)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:6px 4px;color:var(--mu);font-family:'DM Mono',monospace;transition:color .15s}
+.nb.active{color:var(--a)}
+.nb .nl{font-size:9px;letter-spacing:.05em;color:inherit;opacity:.7}
+.nicon{width:20px;height:20px;display:block;margin:0 auto;stroke-width:1.75}
 /* cards */
-.card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(120,80,30,.07)}
 /* stats */
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:16px 0 4px}
-.sc{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:12px 10px;text-align:center}
-.sn{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1}
-.sl{font-size:9px;color:var(--mu2);margin-top:3px}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:12px 8px;text-align:center}
+.sn{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;line-height:1}
+.sl{font-size:9px;color:var(--mu2);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
 /* job tabs */
-.jtabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin:16px 0 12px}
-.jtab{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:9px 4px;font-size:11px;font-family:'DM Mono',monospace;color:var(--mu2);cursor:pointer;text-align:center;transition:color .15s}
+.jtabs{display:flex;gap:0;border-bottom:1px solid var(--bd);margin:14px 0 10px}
+.jtab{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:8px 3px;font-size:10px;font-family:'DM Mono',monospace;color:var(--mu2);cursor:pointer;text-align:center;transition:color .15s;text-transform:uppercase;letter-spacing:.04em}
 .jtab.active{color:var(--a);border-bottom-color:var(--a)}
 /* tags */
-.tag{display:inline-block;font-size:10px;padding:3px 8px;border-radius:5px;font-family:'DM Mono',monospace}
-.ta{background:rgba(94,234,212,.12);color:var(--a)}.tb{background:rgba(244,114,182,.12);color:var(--a2)}
-.tc{background:rgba(251,191,36,.12);color:var(--a3)}.td{background:rgba(255,255,255,.06);color:var(--mu2)}
-.te{background:rgba(129,140,248,.12);color:var(--a4)}
+.tag{display:inline-block;font-size:10px;padding:3px 8px;border-radius:3px;font-family:'DM Mono',monospace}
+.ta{background:rgba(212,132,90,.15);color:var(--a)}.tb{background:rgba(201,168,76,.15);color:var(--a2)}
+.tc{background:rgba(143,170,102,.15);color:var(--a3)}.td{background:rgba(255,255,255,.05);color:var(--mu2)}
+.te{background:rgba(176,125,158,.15);color:var(--a4)}
 /* pills */
-.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:20px}
-.pn{background:rgba(94,234,212,.12);color:var(--a)}.pa{background:rgba(99,102,241,.12);color:#a5b4fc}
-.pi{background:rgba(251,191,36,.12);color:var(--a3)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:3px}
+.pn{background:rgba(212,132,90,.15);color:var(--a)}.pa{background:rgba(176,125,158,.15);color:var(--a4)}
+.pi{background:rgba(201,168,76,.15);color:var(--a2)}
 /* buttons */
-.btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:center;transition:opacity .15s,transform .1s}
-.btn:active{transform:scale(.98);opacity:.85}
-.btnp{background:linear-gradient(135deg,#5eead4,#f472b6);color:#07070f}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:6px;cursor:pointer;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;text-align:center;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.98);opacity:.8}
+.btnp{background:var(--a);color:#fff;font-weight:700}
 .btns{background:var(--s2);border:1px solid var(--bd);color:var(--tx)}
 .btng{background:transparent;border:1px solid var(--bd);color:var(--mu2)}
 /* inputs */
 .lbl{font-size:10px;color:var(--mu2);margin-bottom:5px;display:block;letter-spacing:.06em;text-transform:uppercase}
-.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:11px 13px;color:var(--tx);font-size:13px;font-family:'DM Mono',monospace;-webkit-appearance:none;transition:border-color .15s}
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:11px 13px;color:var(--tx);font-size:13px;font-family:'DM Mono',monospace;-webkit-appearance:none;transition:border-color .15s}
 .inp:focus{outline:none;border-color:var(--a)}
 textarea.inp{resize:vertical;min-height:80px;line-height:1.6}
 /* toggle */
@@ -68,40 +96,40 @@ textarea.inp{resize:vertical;min-height:80px;line-height:1.6}
 .trow:last-child{border-bottom:none}
 .tog{width:40px;height:22px;border-radius:11px;background:var(--s2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:1px solid var(--bd)}
 .tog.on{background:var(--a);border-color:var(--a)}
-.tth{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s}
+.tth{position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .tog.on .tth{left:20px}
 /* section title */
-.stitle{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu2);margin:20px 0 10px}
+.stitle{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2);margin:22px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
 /* letter output */
-.cursor::after{content:'▊';animation:blink .8s infinite;color:var(--a)}
-#lout{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px;font-size:12px;line-height:1.8;min-height:220px;white-space:pre-wrap;word-break:break-word;width:100%;box-sizing:border-box;resize:vertical;color:var(--fg);font-family:'DM Mono',monospace;outline:none}
+.cursor::after{content:'|';animation:blink .8s infinite;color:var(--a)}
+#lout{background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:16px;font-size:12px;line-height:1.8;min-height:220px;white-space:pre-wrap;word-break:break-word;width:100%;box-sizing:border-box;resize:vertical;color:var(--tx);font-family:'DM Mono',monospace;outline:none}
 @keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
 .su{animation:slideUp .25s ease-out}
-input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--s2);border-radius:2px;outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--a);cursor:pointer;border:2px solid var(--bg)}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--s2);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--a);cursor:pointer;border:2px solid var(--bg)}
 /* skill chips */
-.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;transition:opacity .15s}
-.chip-cv{background:rgba(94,234,212,.12);color:var(--a);border:1px solid rgba(94,234,212,.2)}
-.chip-manual{background:rgba(244,114,182,.1);color:var(--a2);border:1px solid rgba(244,114,182,.2)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;transition:opacity .15s}
+.chip-cv{background:rgba(212,132,90,.15);color:var(--a);border:1px solid rgba(212,132,90,.25)}
+.chip-manual{background:rgba(201,168,76,.12);color:var(--a2);border:1px solid rgba(201,168,76,.2)}
 /* cv progress */
 .cvprog{display:none;margin-top:8px}
-.cvprog-bar{height:3px;background:var(--s2);border-radius:2px;overflow:hidden}
-.cvprog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--a),var(--a2));transition:width .3s}
+.cvprog-bar{height:2px;background:var(--s2);border-radius:2px;overflow:hidden}
+.cvprog-fill{height:100%;width:0%;background:var(--a);transition:width .3s}
 /* doc list */
-.docitem{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid rgba(244,114,182,.15);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.docitem{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:10px 12px;margin-bottom:8px}
 /* keyword tags */
-.kwtag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:6px;background:rgba(129,140,248,.12);color:var(--a4);border:1px solid rgba(129,140,248,.2);margin:3px}
+.kwtag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:4px;background:rgba(176,125,158,.12);color:var(--a4);border:1px solid rgba(176,125,158,.2);margin:3px}
 /* conn banner */
-.conn{margin:12px 0;padding:12px 14px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;font-size:11px;color:var(--a3);line-height:1.6;display:none}
+.conn{margin:12px 0;padding:12px 14px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:6px;font-size:11px;color:var(--a2);line-height:1.6;display:none}
 </style>
 </head>
 <body>
 
-<!-- ── AUTH OVERLAY ───────────────────────────────────────────────────── -->
+<!--  AUTH OVERLAY  -->
 <div id="authOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;padding:24px">
   <div style="width:100%;max-width:340px">
     <div style="text-align:center;margin-bottom:32px">
-      <div style="width:64px;height:64px;background:linear-gradient(135deg,#5eead4,#f472b6);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px">⚡</div>
+      <div style="width:64px;height:64px;background:var(--a);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;font-family:'Syne',sans-serif;font-weight:800;color:#fff;margin:0 auto 16px">JH</div>
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:24px">Job<span style="color:var(--a)">Hunter</span> AI</div>
       <div style="font-size:12px;color:var(--mu2);margin-top:8px">PIN eingeben</div>
     </div>
@@ -113,15 +141,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 
 <div class="hdr">
   <div class="hrow">
-    <div class="logo"><div class="lic">⚡</div><div class="ltx">Job<span>Hunter</span></div></div>
+    <div class="logo"><div class="lic">JH</div><div class="ltx">Job<span>Hunter</span></div></div>
     <div class="badge"><div class="dot" id="dot"></div><span id="scanTxt">Verbinde...</span></div>
   </div>
+  <div id="breadcrumbBar" class="breadcrumb"><span>Jobs</span></div>
   <div class="pbar" id="pbar" style="display:none"><div class="pfill" id="pfill"></div></div>
 </div>
 
-<!-- ── DASHBOARD ── -->
+<!--  DASHBOARD  -->
 <div class="screen active su" id="screen-dashboard">
-  <div class="conn" id="connBanner">⚠️ Server nicht erreichbar · <code>node server.js</code> auf dem PC starten · beide Geräte ins gleiche WLAN</div>
+  <div class="conn" id="connBanner">Server nicht erreichbar &mdash; <code>node server.js</code> auf dem PC starten &mdash; beide Geräte ins gleiche WLAN</div>
   <div class="sgrid">
     <div class="sc"><div class="sn" style="color:var(--a)" id="stN">–</div><div class="sl">Neu</div></div>
     <div class="sc"><div class="sn" style="color:var(--a4)" id="stA">–</div><div class="sl">Beworben</div></div>
@@ -130,62 +159,68 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
     <div class="stitle" style="margin:0">Stellen</div>
-    <button onclick="triggerScan()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:8px;padding:6px 13px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">▶ Jetzt scannen</button>
+    <button onclick="triggerScan()" style="background:rgba(184,98,62,.12);border:1px solid rgba(184,98,62,.3);border-radius:5px;padding:6px 13px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;display:flex;align-items:center;gap:5px"><i data-lucide="refresh-cw" style="width:12px;height:12px"></i>Jetzt scannen</button>
   </div>
   <!-- Job tabs -->
   <div class="jtabs">
     <button class="jtab active" onclick="setJobTab('all',this)">Alle</button>
-    <button class="jtab" onclick="setJobTab('remote',this)">🌐 Remote</button>
-    <button class="jtab" onclick="setJobTab('local',this)">📍 Lokal</button>
-    <button class="jtab" onclick="setJobTab('car',this)">🚗 Dienstwagen</button>
-    <button class="jtab" onclick="setJobTab('applied',this)" id="tabApplied">📬 Beworben</button>
+    <button class="jtab" onclick="setJobTab('remote',this)">Remote</button>
+    <button class="jtab" onclick="setJobTab('local',this)">Lokal</button>
+    <button class="jtab" onclick="setJobTab('car',this)">Dienstwagen</button>
+    <button class="jtab" onclick="setJobTab('applied',this)" id="tabApplied">Beworben</button>
   </div>
   <!-- Source filter chips -->
   <div id="srcFilterBar" style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 4px"></div>
+  <!-- Search bar -->
+  <div style="position:relative;margin-bottom:8px">
+    <input id="jobSearch" type="search" placeholder="Suche nach Titel, Firma, Keyword..." oninput="renderJobList()" style="width:100%;box-sizing:border-box;background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:9px 12px 9px 34px;color:var(--tx);font-size:12px;font-family:'DM Mono',monospace;outline:none" onfocus="this.style.borderColor='rgba(212,132,90,.5)'" onblur="this.style.borderColor='var(--bd)'"/>
+    <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--mu2);fill:none;pointer-events:none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  </div>
   <div id="jobList"><div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px">Lade Jobs...</div></div>
 </div>
 
-<!-- ── ANSCHREIBEN ── -->
+<!--  ANSCHREIBEN  -->
 <div class="screen su" id="screen-letter">
   <div class="stitle">Anschreiben</div>
 
   <!-- URL Generator -->
-  <div class="card" style="border-color:rgba(94,234,212,.2)">
-    <div style="font-size:11px;color:var(--a);letter-spacing:.06em;margin-bottom:8px">🔗 STELLE AUS LINK GENERIEREN</div>
+  <div class="card" style="border-color:rgba(212,132,90,.25)">
+    <div style="font-size:10px;color:var(--a);letter-spacing:.08em;margin-bottom:8px;text-transform:uppercase">Stelle aus Link generieren</div>
     <div style="display:flex;gap:8px">
       <input class="inp" id="letterUrl" placeholder="https://jobs.firma.de/stelle/..." style="flex:1;font-size:12px;padding:10px 12px" onkeydown="if(event.key==='Enter')generateFromUrl()"/>
-      <button onclick="generateFromUrl()" id="letterUrlBtn" style="background:linear-gradient(135deg,rgba(94,234,212,.8),rgba(244,114,182,.8));border:none;border-radius:10px;padding:10px 16px;color:#07070f;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;font-weight:700;white-space:nowrap">✍️ Erstellen</button>
+      <button onclick="generateFromUrl()" id="letterUrlBtn" style="background:var(--a);border:none;border-radius:6px;padding:10px 16px;color:#fff;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;font-weight:700;white-space:nowrap">Erstellen</button>
     </div>
     <div id="letterUrlStatus" style="display:none;font-size:11px;color:var(--mu2);margin-top:8px;line-height:1.6"></div>
   </div>
 
   <!-- Job info card (shown after generation or when coming from job list) -->
-  <div class="card" id="ljCard" style="display:none;border-color:rgba(94,234,212,.25)">
+  <div class="card" id="ljCard" style="display:none;border-color:rgba(212,132,90,.2)">
     <div style="font-size:10px;color:var(--a);margin-bottom:6px;letter-spacing:.06em">STELLE</div>
     <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px" id="ljTitle">–</div>
     <div style="font-size:11px;color:var(--mu2);margin-top:3px" id="ljComp">–</div>
     <div id="ljTags" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:5px"></div>
   </div>
   <div id="noJob" class="card" style="text-align:center;padding:24px 16px;color:var(--mu)">
-    <div style="font-size:28px;margin-bottom:8px">✍️</div>
+    <div style="font-size:28px;margin-bottom:8px;color:var(--mu2);font-family:'Syne',sans-serif;font-weight:700">JH</div>
     <div style="font-size:12px;line-height:1.6">Link einfügen &amp; generieren — oder im Dashboard eine Stelle → <strong>Anschreiben</strong></div>
   </div>
   <div id="lsec" style="display:none">
+    <div id="lout-subject" style="display:none;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;color:var(--tx);padding:10px 14px;background:var(--s1);border:1px solid var(--bd);border-bottom:none;border-radius:6px 6px 0 0;letter-spacing:.01em"></div>
     <textarea id="lout" class="cursor" spellcheck="false"></textarea>
     <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btnp" style="flex:2;font-size:12px" onclick="applyNow()">🚀 Jetzt bewerben</button>
-      <button class="btn btns" style="flex:1;font-size:12px" onclick="regenLetter()">↻ Neu</button>
+      <button class="btn btnp" style="flex:2;font-size:12px" onclick="applyNow()">Jetzt bewerben</button>
+      <button class="btn btns" style="flex:1;font-size:12px" onclick="regenLetter()">Neu generieren</button>
     </div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn btng" style="flex:1;font-size:11px" onclick="copyLetter()">📋 Kopieren</button>
-      <button class="btn btng" style="flex:1;font-size:11px" onclick="downloadLetterPdf()" id="dlPdfBtn">📄 PDF laden</button>
-      <button class="btn btng" style="flex:1;font-size:11px" onclick="downloadLetter()">📥 .txt laden</button>
+      <button class="btn btng" style="flex:1;font-size:11px" onclick="copyLetter()">Kopieren</button>
+      <button class="btn btng" style="flex:1;font-size:11px" onclick="downloadLetterPdf()" id="dlPdfBtn">PDF</button>
+      <button class="btn btng" style="flex:1;font-size:11px" onclick="downloadLetter()">.txt</button>
     </div>
-    <button class="btn btng" style="margin-top:8px;font-size:12px" onclick="markAppliedCurrent()">✓ Als beworben markieren</button>
+    <button class="btn btng" style="margin-top:8px;font-size:12px" onclick="markAppliedCurrent()">Als beworben markieren</button>
   </div>
 </div>
 
-<!-- ── PROFIL ── -->
+<!--  PROFIL  -->
 <div class="screen su" id="screen-profile">
   <div class="stitle">Persönliche Daten</div>
   <div class="card">
@@ -212,13 +247,43 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     </div>
   </div>
 
+  <div class="stitle">Gehaltsvorstellung</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:12px;line-height:1.6">Wird vom Bot automatisch in Gehaltsfelder eingetragen</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="flex:1">
+        <label class="lbl">Wunschgehalt (Einzelwert)</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input class="inp" id="pSalary" type="number" placeholder="45000" style="flex:1"/>
+          <span style="font-size:11px;color:var(--mu2)">€/Jahr</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="flex:1">
+        <label class="lbl">Range Von</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input class="inp" id="pSalaryMin" type="number" placeholder="40000" style="flex:1"/>
+          <span style="font-size:11px;color:var(--mu2)">€</span>
+        </div>
+      </div>
+      <div style="flex:1">
+        <label class="lbl">Range Bis</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input class="inp" id="pSalaryMax" type="number" placeholder="55000" style="flex:1"/>
+          <span style="font-size:11px;color:var(--mu2)">€</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="stitle">Sprachkenntnisse</div>
   <div class="card">
     <div style="font-size:11px;color:var(--mu2);margin-bottom:10px">z.B. "Deutsch (Muttersprache), Englisch (C1), Türkisch (Muttersprache)"</div>
     <div id="langChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;margin-bottom:10px"></div>
     <div style="display:flex;gap:8px">
       <input class="inp" id="langIn" placeholder="z.B. Englisch (C1)" style="flex:1;padding:9px 12px;font-size:12px" onkeydown="if(event.key==='Enter')addLang()"/>
-      <button onclick="addLang()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:9px 14px;color:var(--a4);font-size:18px;cursor:pointer">+</button>
+      <button onclick="addLang()" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:9px 14px;color:var(--a4);font-size:18px;cursor:pointer">+</button>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">
       <span onclick="quickAddLang('Deutsch (Muttersprache)',this)" style="font-size:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 8px;cursor:pointer;color:var(--mu2)">Deutsch (Muttersprache)</span>
@@ -233,14 +298,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   <div class="stitle">Skills</div>
   <div class="card">
     <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">
-      📄 <span style="color:var(--a)">Türkis</span> = aus Lebenslauf · ✏️ <span style="color:var(--a2)">Rosa</span> = manuell · Tippen zum Entfernen
+      <span style="color:var(--a)">Terrakotta</span> = aus Lebenslauf &nbsp;&middot;&nbsp; <span style="color:var(--a2)">Amber</span> = manuell &nbsp;&middot;&nbsp; Tippen zum Entfernen
     </div>
     <div id="skillChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;margin-bottom:12px">
-      <span style="font-size:11px;color:var(--mu);font-style:italic" id="skillPh">Noch keine Skills – Lebenslauf hochladen oder manuell eingeben</span>
+      <span style="font-size:11px;color:var(--mu);font-style:italic" id="skillPh">Noch keine Skills &ndash; Lebenslauf hochladen oder manuell eingeben</span>
     </div>
     <div style="display:flex;gap:8px">
       <input class="inp" id="skillIn" placeholder="Skill hinzufügen..." style="flex:1;padding:9px 12px;font-size:12px" onkeydown="if(event.key==='Enter')addSkill()"/>
-      <button onclick="addSkill()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:10px;padding:9px 14px;color:var(--a);font-size:18px;cursor:pointer">+</button>
+      <button onclick="addSkill()" style="background:rgba(212,132,90,.15);border:1px solid rgba(212,132,90,.3);border-radius:6px;padding:9px 14px;color:var(--a);font-size:18px;cursor:pointer">+</button>
     </div>
   </div>
 
@@ -250,12 +315,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <!-- CV with AI analysis -->
     <div style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--mu2)">📄 Lebenslauf (PDF)</span>
+        <span style="font-size:12px;color:var(--mu2)"> Lebenslauf (PDF)</span>
         <span id="cvStatus" style="font-size:10px;color:var(--a);display:none">Analysiere...</span>
       </div>
       <label style="display:block;cursor:pointer">
-        <div id="cvLabel" style="background:var(--s2);border:1px dashed rgba(94,234,212,.3);border-radius:10px;padding:16px;text-align:center;font-size:12px;color:var(--mu2)">
-          <div style="font-size:24px;margin-bottom:4px">📄</div>
+        <div id="cvLabel" style="background:var(--s2);border:1px dashed rgba(212,132,90,.25);border-radius:6px;padding:16px;text-align:center;font-size:12px;color:var(--mu2)">
+          <div style="font-size:24px;margin-bottom:4px"></div>
           <div>PDF hochladen</div>
           <div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills werden automatisch erkannt</div>
         </div>
@@ -269,8 +334,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <!-- Multi-document upload -->
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--mu2)">📜 Zeugnisse & Zertifikate</span>
-        <label style="display:flex;align-items:center;gap:5px;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:11px;color:var(--a2)">
+        <span style="font-size:12px;color:var(--mu2)"> Zeugnisse & Zertifikate</span>
+        <label style="display:flex;align-items:center;gap:5px;background:rgba(176,125,158,.08);border:1px solid rgba(176,125,158,.2);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:11px;color:var(--a2)">
           + Hinzufügen
           <input type="file" accept=".pdf,.doc,.docx,.jpg,.png" multiple style="display:none" onchange="handleDocs(this)"/>
         </label>
@@ -285,9 +350,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 
   <div class="stitle">Job-Präferenzen</div>
   <div class="card">
-    <div class="trow"><div><div style="font-size:13px">🌐 Remote-Stellen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Deutschlandweit</div></div><div class="tog on" id="togRemote" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">📍 Lokale Stellen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Im eingestellten Radius</div></div><div class="tog on" id="togLocal" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">🚗 Stellen mit Dienstwagen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Größerer Umkreis erlaubt</div></div><div class="tog on" id="togCar" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">Remote-Stellen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Deutschlandweit</div></div><div class="tog on" id="togRemote" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">Lokale Stellen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Im eingestellten Radius</div></div><div class="tog on" id="togLocal" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px">Stellen mit Dienstwagen</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Größerer Umkreis erlaubt</div></div><div class="tog on" id="togCar" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
     <div style="padding-top:14px">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--mu2)">Radius ohne Auto</span><span style="font-size:13px;color:var(--a)" id="distLbl">10 km</span></div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -307,28 +372,28 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <input class="inp" id="pLocation" placeholder="Schweinfurt" style="font-size:12px"/>
     </div>
     <div style="margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">
-      <label class="lbl">📎 Dokumente (Lebenslauf, Zertifikate...)</label>
+      <label class="lbl">Dokumente (Lebenslauf, Zertifikate...)</label>
       <div id="fileList" style="margin-bottom:8px;min-height:10px"></div>
-      <label style="display:block;background:rgba(94,234,212,.07);border:1.5px dashed rgba(94,234,212,.3);border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:var(--a);transition:.2s" onmouseover="this.style.background='rgba(94,234,212,.13)'" onmouseout="this.style.background='rgba(94,234,212,.07)'">
-        + PDF / Word hochladen (Lebenslauf, Zertifikat...)
+      <label style="display:block;background:rgba(212,132,90,.07);border:1.5px dashed rgba(212,132,90,.3);border-radius:6px;padding:14px;text-align:center;cursor:pointer;font-size:12px;color:var(--a);transition:.2s" onmouseover="this.style.background='rgba(212,132,90,.13)'" onmouseout="this.style.background='rgba(212,132,90,.07)'">
+        + PDF / Word hochladen
         <input type="file" accept=".pdf,.doc,.docx" style="display:none" onchange="uploadFile(this)">
       </label>
     </div>
     <div style="margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">
-      <label class="lbl">✉️ Generierte Anschreiben</label>
+      <label class="lbl">Generierte Anschreiben</label>
       <div id="letterList" style="min-height:10px"><div style="font-size:11px;color:var(--mu2)">Lade...</div></div>
     </div>
   </div>
-  <button class="btn btnp" style="margin-top:4px" onclick="saveProfile()">💾 Profil & Präferenzen speichern</button>
-  <button onclick="browserSetup()" style="width:100%;margin-top:8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.3);border-radius:12px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-    🌐 Browser einrichten (einmalig einloggen)
+  <button class="btn btnp" style="margin-top:4px" onclick="saveProfile()">Profil &amp; Pr&auml;ferenzen speichern</button>
+  <button onclick="browserSetup()" style="width:100%;margin-top:8px;background:rgba(176,125,158,.1);border:1px solid rgba(176,125,158,.25);border-radius:6px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+     Browser einrichten (einmalig einloggen)
   </button>
   <div id="browserSetupHint" style="display:none;font-size:10px;color:var(--mu2);text-align:center;margin-top:6px;line-height:1.7;padding:0 4px">
-    Browser ist offen · Bei LinkedIn, Xing, StepStone &amp; Co. einloggen<br>danach Browser schließen · Logins bleiben dauerhaft gespeichert ✓
+    Browser ist offen · Bei LinkedIn, Xing, StepStone &amp; Co. einloggen<br>danach Browser schließen · Logins bleiben dauerhaft gespeichert 
   </div>
 </div>
 
-<!-- ── EINSTELLUNGEN ── -->
+<!--  EINSTELLUNGEN  -->
 <div class="screen su" id="screen-settings">
   <!-- Search keywords -->
   <div class="stitle">Suchbegriffe</div>
@@ -337,7 +402,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div id="kwList" style="display:flex;flex-wrap:wrap;gap:4px;min-height:36px;margin-bottom:12px"></div>
     <div style="display:flex;gap:8px">
       <input class="inp" id="kwIn" placeholder="z.B. SAP ABAP Junior" style="flex:1;padding:9px 12px;font-size:12px" onkeydown="if(event.key==='Enter')addKw()"/>
-      <button onclick="addKw()" style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:9px 14px;color:var(--a4);font-size:18px;cursor:pointer">+</button>
+      <button onclick="addKw()" style="background:rgba(176,125,158,.12);border:1px solid rgba(176,125,158,.25);border-radius:6px;padding:9px 14px;color:var(--a4);font-size:18px;cursor:pointer">+</button>
     </div>
     <div style="margin-top:10px;font-size:10px;color:var(--mu2)">Vorschläge:</div>
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px" id="kwSuggestions"></div>
@@ -353,22 +418,22 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     </div>
     <div style="display:flex;gap:8px">
       <input class="inp" id="srcUrl" placeholder="https://firma.de/jobs" style="flex:1;padding:9px 12px;font-size:12px"/>
-      <button onclick="addSource()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:10px;padding:9px 14px;color:var(--a);font-size:18px;cursor:pointer">+</button>
+      <button onclick="addSource()" style="background:rgba(212,132,90,.1);border:1px solid rgba(212,132,90,.25);border-radius:6px;padding:9px 14px;color:var(--a);font-size:18px;cursor:pointer">+</button>
     </div>
   </div>
 
   <!-- Standard sources -->
   <div class="stitle">Standard-Quellen</div>
   <div class="card" id="stdSources">
-    <div class="trow"><div style="font-size:13px">🏢 Arbeitsagentur</div><div class="tog on" id="srcAA" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div style="font-size:13px">🔍 Indeed</div><div class="tog on" id="srcIn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div style="font-size:13px">📋 StepStone</div><div class="tog on" id="srcSS" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">💼 LinkedIn</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Öffentliche Stellenanzeigen</div></div><div class="tog" id="srcLI" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">🔷 Xing</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DACH-Fokus</div></div><div class="tog" id="srcXi" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">💻 Heise Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">IT-Fachkräfte · Deutschland</div></div><div class="tog on" id="srcHe" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">🔎 Bing Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Suche nach Stellenanzeigen</div></div><div class="tog on" id="srcGo" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">🌍 Remotive</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">100% Remote-Jobs weltweit · Gratis-API</div></div><div class="tog on" id="srcRm" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div><div style="font-size:13px">🇩🇪 Arbeitnow</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DE/EU Jobs · viele Remote · Gratis-API</div></div><div class="tog on" id="srcAn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div style="font-size:13px"> Arbeitsagentur</div><div class="tog on" id="srcAA" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div style="font-size:13px"> Indeed</div><div class="tog on" id="srcIn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div style="font-size:13px"> StepStone</div><div class="tog on" id="srcSS" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px"> LinkedIn</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Öffentliche Stellenanzeigen</div></div><div class="tog" id="srcLI" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px"> Xing</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DACH-Fokus</div></div><div class="tog" id="srcXi" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px"> Heise Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">IT-Fachkräfte · Deutschland</div></div><div class="tog on" id="srcHe" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px"> Bing Jobs</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Suche nach Stellenanzeigen</div></div><div class="tog on" id="srcGo" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px"> Remotive</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">100% Remote-Jobs weltweit · Gratis-API</div></div><div class="tog on" id="srcRm" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
+    <div class="trow"><div><div style="font-size:13px"> Arbeitnow</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DE/EU Jobs · viele Remote · Gratis-API</div></div><div class="tog on" id="srcAn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
   </div>
 
   <!-- API & Interval -->
@@ -392,29 +457,41 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <label class="lbl">Anthropic API Key</label>
       <input class="inp" type="password" id="apiKey" placeholder="sk-ant-api03-..." style="margin-bottom:10px"/>
       <div style="font-size:10px;color:var(--mu);margin-bottom:10px">Haiku: ~0,05 Cent/Anschreiben · platform.anthropic.com</div>
-      <button onclick="testAnthropicKey()" style="width:100%;background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.25);border-radius:9px;padding:9px;color:var(--a2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🔑 API Key testen</button>
-      <div id="anthropicTestResult" style="display:none;margin-top:8px;padding:9px 12px;border-radius:9px;font-size:11px;line-height:1.6"></div>
+      <button onclick="testAnthropicKey()" style="width:100%;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);border-radius:6px;padding:9px;color:var(--a2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">API Key testen</button>
+      <div id="anthropicTestResult" style="display:none;margin-top:8px;padding:9px 12px;border-radius:6px;font-size:11px;line-height:1.6"></div>
     </div>
 
     <!-- Ollama section -->
     <div id="ollamaSec" style="display:none">
       <div style="margin-bottom:10px">
-        <label class="lbl">Ollama Modell</label>
+        <label class="lbl">Ollama Modell (Text)</label>
         <select class="inp" id="ollamaModel" style="cursor:pointer">
           <option value="qwen2.5:32b">Qwen2.5 32B (alternativ)</option>
-          <option value="llama3.1:70b-instruct-q4_K_M">Llama 3.1 70B Q4 ⭐ (dein Modell)</option>
+          <option value="llama3.1:70b-instruct-q4_K_M">Llama 3.1 70B Q4  (dein Modell)</option>
           <option value="qwen2.5:14b">Qwen2.5 14B (schneller, etwas schwächer)</option>
           <option value="mistral:7b">Mistral 7B (sehr schnell, okay für Deutsch)</option>
           <option value="custom">Eigenes Modell...</option>
         </select>
         <input class="inp" id="ollamaModelCustom" placeholder="z.B. llama3.2:latest" style="display:none;margin-top:6px;font-size:12px"/>
       </div>
-      <div id="ollamaStatus" style="padding:10px 12px;background:var(--s2);border-radius:9px;font-size:11px;line-height:1.7;color:var(--mu2)">
+      <div style="margin-bottom:10px">
+        <label class="lbl">Vision-Modell (Browser-Automatisierung)</label>
+        <select class="inp" id="ollamaVisionModel" style="cursor:pointer">
+          <option value="llava:latest">LLaVA latest (empfohlen)</option>
+          <option value="llava:13b">LLaVA 13B (besser, langsamer)</option>
+          <option value="minicpm-v:latest">MiniCPM-V (kompakt, gut)</option>
+          <option value="moondream:latest">Moondream (sehr schnell, klein)</option>
+          <option value="llava-phi3:latest">LLaVA-Phi3 (schnell + gut)</option>
+          <option value="bakllava:latest">BakLLaVA</option>
+        </select>
+        <div style="margin-top:5px;font-size:10px;color:var(--mu)">Einmalig herunterladen: <code style="background:var(--s2);padding:2px 5px;border-radius:3px">ollama pull llava</code> (~4 GB)</div>
+      </div>
+      <div id="ollamaStatus" style="padding:10px 12px;background:var(--s2);border-radius:6px;font-size:11px;line-height:1.7;color:var(--mu2)">
         Prüfe Ollama...
       </div>
-      <button onclick="testOllama()" style="width:100%;margin-top:8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25);border-radius:9px;padding:9px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer" id="ollamaTestBtn">🖥️ Ollama testen</button>
-      <div id="ollamaTestResult" style="display:none;margin-top:8px;padding:9px 12px;border-radius:9px;font-size:11px;line-height:1.6"></div>
-      <div style="margin-top:10px;padding:10px 12px;background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.15);border-radius:9px;font-size:11px;line-height:1.7;color:var(--mu2)">
+      <button onclick="testOllama()" style="width:100%;margin-top:8px;background:rgba(176,125,158,.1);border:1px solid rgba(176,125,158,.2);border-radius:6px;padding:9px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer" id="ollamaTestBtn">Ollama testen</button>
+      <div id="ollamaTestResult" style="display:none;margin-top:8px;padding:9px 12px;border-radius:6px;font-size:11px;line-height:1.6"></div>
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(176,125,158,.07);border:1px solid rgba(176,125,158,.12);border-radius:6px;font-size:11px;line-height:1.7;color:var(--mu2)">
         <strong style="color:var(--a4)">Setup (einmalig):</strong><br/>
         1. <a href="https://ollama.com" target="_blank" style="color:var(--a)">ollama.com</a> → Download → installieren<br/>
         2. CMD öffnen:<br/>
@@ -422,8 +499,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
         <span style="color:var(--mu);font-size:10px">(~19 GB Download, einmalig)</span><br/>
         3. Ollama läuft dann automatisch im Hintergrund
       </div>
-      <div style="margin-top:8px;font-size:10px;color:var(--mu)">⚠️ Bei gescannten PDFs (Bilder) können Skills ggf. nicht erkannt werden → dann manuell eintragen</div>
+      <div style="margin-top:8px;font-size:10px;color:var(--mu)">Bei gescannten PDFs (Bilder) können Skills ggf. nicht erkannt werden &rarr; dann manuell eintragen</div>
     </div>
+  </div>
+
+  <!-- AI Costs (only Anthropic) -->
+  <div class="stitle" id="aiCostsTitle" style="display:none">Claude API Kosten (Session)</div>
+  <div class="card" id="aiCostsCard" style="display:none">
+    <div id="aiCostsBody" style="font-size:12px;line-height:2;color:var(--mu2)">Lade...</div>
+    <button onclick="loadAiCosts()" style="width:100%;margin-top:8px;background:rgba(212,132,90,.07);border:1px solid rgba(212,132,90,.15);border-radius:6px;padding:8px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">Aktualisieren</button>
   </div>
 
   <div class="stitle">Scan-Intervall</div>
@@ -452,21 +536,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     </div>
     <input class="inp" id="smtpUser" placeholder="dein@gmail.com" style="margin-bottom:6px"/>
     <input class="inp" id="smtpPass" type="password" placeholder="App-Passwort (nicht Login-Passwort!)" style="margin-bottom:8px"/>
-    <div id="smtpStatus" style="display:none;padding:8px 12px;border-radius:9px;font-size:11px;line-height:1.6;margin-bottom:8px"></div>
-    <button onclick="testSmtp()" style="width:100%;background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.25);border-radius:9px;padding:9px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">📧 SMTP testen</button>
-    <div style="margin-top:8px;font-size:10px;color:var(--mu);line-height:1.6">⚠️ Gmail: App-Passwort unter myaccount.google.com → Sicherheit → App-Passwörter<br/>⚠️ Outlook: App-Passwort aus Microsoft Konto-Sicherheitseinstellungen</div>
+    <div id="smtpStatus" style="display:none;padding:8px 12px;border-radius:6px;font-size:11px;line-height:1.6;margin-bottom:8px"></div>
+    <button onclick="testSmtp()" style="width:100%;background:rgba(143,170,102,.1);border:1px solid rgba(143,170,102,.25);border-radius:6px;padding:9px;color:var(--a3);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">SMTP testen</button>
+    <div style="margin-top:8px;font-size:10px;color:var(--mu);line-height:1.6">Gmail: App-Passwort unter myaccount.google.com &rarr; Sicherheit &rarr; App-Passwörter<br/>Outlook: App-Passwort aus Microsoft Konto-Sicherheitseinstellungen</div>
   </div>
 
   <!-- Access PIN -->
-  <div class="stitle">🔐 Zugriffsschutz (PIN)</div>
+  <div class="stitle">Zugriffsschutz (PIN)</div>
   <div class="card">
     <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">Schützt den Zugang vom PC und Handy. Leer lassen = kein Schutz.</div>
     <label class="lbl">PIN (Zahlen, min. 4 Stellen)</label>
     <input class="inp" id="accessPin" type="password" inputmode="numeric" pattern="[0-9]*" placeholder="z.B. 1234" style="margin-bottom:8px"/>
-    <button onclick="savePin()" style="width:100%;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.25);border-radius:9px;padding:9px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🔐 PIN speichern</button>
+    <button onclick="savePin()" style="width:100%;background:rgba(176,125,158,.08);border:1px solid rgba(176,125,158,.2);border-radius:6px;padding:9px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">PIN speichern</button>
   </div>
 
-  <button class="btn btnp" style="margin-top:4px" onclick="saveSettings()">💾 Einstellungen speichern</button>
+  <button class="btn btnp" style="margin-top:4px" onclick="saveSettings()">Einstellungen speichern</button>
 
   <!-- Status -->
   <div class="stitle">Server-Status</div>
@@ -477,23 +561,24 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div id="selectBar" style="display:none;position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:12px;right:12px;background:var(--s2);border:1px solid var(--bd);border-radius:16px;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:10px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.5)">
   <div style="font-size:12px;color:var(--mu2)"><span id="selectCount">0</span> ausgewählt</div>
   <div style="display:flex;gap:8px">
-    <button onclick="clearSelection()" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;color:var(--mu2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">✕ Abwählen</button>
-    <button onclick="markSelectedApplied()" style="background:rgba(129,140,248,.2);border:1px solid rgba(129,140,248,.4);border-radius:10px;padding:8px 12px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">📬 Als beworben</button>
-    <button onclick="applySelected()" style="background:linear-gradient(135deg,rgba(94,234,212,.8),rgba(244,114,182,.8));border:none;border-radius:10px;padding:8px 14px;color:#07070f;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;font-weight:700">🚀 Alle bewerben</button>
+    <button onclick="clearSelection()" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:6px;padding:8px 12px;color:var(--mu2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">Abwählen</button>
+    <button onclick="markSelectedApplied()" style="background:rgba(176,125,158,.15);border:1px solid rgba(176,125,158,.3);border-radius:6px;padding:8px 12px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">Als beworben</button>
+    <button onclick="applySelected()" style="background:var(--a);border:none;border-radius:6px;padding:8px 14px;color:#fff;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;font-weight:700">Alle bewerben</button>
   </div>
 </div>
 
 <div class="bnav">
-  <button class="nb active" onclick="nav('dashboard')" id="nav-dashboard"><span class="ni">📋</span><span class="nl">Jobs</span></button>
-  <button class="nb" onclick="nav('letter')" id="nav-letter"><span class="ni">✍️</span><span class="nl">Anschreiben</span></button>
-  <button class="nb" onclick="nav('profile')" id="nav-profile"><span class="ni">👤</span><span class="nl">Profil</span></button>
-  <button class="nb" onclick="nav('settings')" id="nav-settings"><span class="ni">⚙️</span><span class="nl">Einstellungen</span></button>
+  <button class="nb active" onclick="nav('dashboard')" id="nav-dashboard"><i data-lucide="briefcase" class="nicon"></i><span class="nl">Übersicht</span></button>
+  <button class="nb" onclick="nav('letter')" id="nav-letter"><i data-lucide="file-text" class="nicon"></i><span class="nl">Anschreiben</span></button>
+  <button class="nb" onclick="nav('profile')" id="nav-profile"><i data-lucide="user" class="nicon"></i><span class="nl">Profil</span></button>
+  <button class="nb" onclick="nav('settings')" id="nav-settings"><i data-lucide="settings" class="nicon"></i><span class="nl">Einstellungen</span></button>
 </div>
 
 <script>
 const BASE = window.location.origin;
 let jobs=[], selectedJobId=null, currentLetter='', skillSet=new Set(), cvSkills=new Set();
 let searchCfg={ keywords:[], custom_sources:[] };
+function ic(name,size=14){return `<i data-lucide="${name}" style="width:${size}px;height:${size}px;display:inline-flex;vertical-align:middle;flex-shrink:0;pointer-events:none"></i>`;}
 let docs=[]; // { name, size, type, emoji }
 let jobTab='all';
 let scanInterval=60;
@@ -502,16 +587,62 @@ let selectedJobs = new Set(); // multi-select
 let authToken = localStorage.getItem('jh_token')||'';
 let disabledSources = new Set(); // sources toggled off by user
 
-// ── NAV ──────────────────────────────────────────────────────────────────
+//  NAV 
 function nav(name) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  document.getElementById('nav-'+name).classList.add('active');
-  if (name==='settings') { loadServerStatus(); renderKwList(); renderSourceList(); renderIvBtns(); }
+  document.getElementById('nav-'+name)?.classList.add('active');
+  // Push to nav history (avoid duplicating top)
+  if (_navHistory[_navHistory.length-1] !== name) _navHistory.push(name);
+  if (_navHistory.length > 8) _navHistory.shift();
+  _renderBreadcrumb();
+  if (name==='settings') {
+    loadServerStatus(); renderKwList(); renderSourceList(); renderIvBtns();
+    const isAnthropicMode = (typeof aiMode !== 'undefined' && aiMode !== 'ollama');
+    document.getElementById('aiCostsTitle').style.display = isAnthropicMode ? '' : 'none';
+    document.getElementById('aiCostsCard').style.display  = isAnthropicMode ? '' : 'none';
+    if (isAnthropicMode) loadAiCosts();
+  }
 }
 
-// ── API ───────────────────────────────────────────────────────────────────
+const _navLabels = { dashboard:'Jobs', letter:'Anschreiben', profile:'Profil', settings:'Einstellungen' };
+let _navHistory = ['dashboard'];
+
+function _renderBreadcrumb() {
+  const bar = document.getElementById('breadcrumbBar');
+  const current = _navHistory[_navHistory.length - 1];
+  const prev    = _navHistory[_navHistory.length - 2];
+  let html = '';
+  // Back button (if not on root)
+  if (_navHistory.length > 1) {
+    html += `<button class="bc-back" onclick="navBack()">`;
+    html += `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`;
+    html += `${_navLabels[prev] || prev}</button>`;
+  }
+  // Crumb trail (show last 3 steps)
+  const trail = _navHistory.slice(-3);
+  trail.forEach((step, i) => {
+    const isLast = i === trail.length - 1;
+    if (i > 0) html += `<span class="bc-sep">›</span>`;
+    if (isLast) {
+      html += `<b>${_navLabels[step] || step}</b>`;
+    } else {
+      html += `<span class="bc-link" onclick="nav('${step}')">${_navLabels[step] || step}</span>`;
+    }
+  });
+  bar.innerHTML = html;
+}
+
+function navBack() {
+  if (_navHistory.length <= 1) return;
+  _navHistory.pop(); // remove current
+  const dest = _navHistory[_navHistory.length - 1];
+  _navHistory.pop(); // nav() will re-push it
+  nav(dest);
+}
+
+//  API 
 async function api(path, method='GET', body=null) {
   const sep = path.includes('?') ? '&' : '?';
   const url = BASE + path + (authToken ? sep+'token='+encodeURIComponent(authToken) : '');
@@ -522,20 +653,21 @@ async function api(path, method='GET', body=null) {
   return res.json();
 }
 
-// ── JOBS ──────────────────────────────────────────────────────────────────
+//  JOBS 
 async function loadJobs() {
   try {
     const data=await api('/api/jobs');
     jobs=data.jobs||[];
     document.getElementById('connBanner').style.display='none';
-    document.getElementById('dot').style.background='var(--a)';
-    document.getElementById('scanTxt').textContent=data.lastScan?'Scan: '+timeSince(data.lastScan):'Bereit';
+    document.getElementById('connBanner').style.display='none';
+    updateScanBadge(data);
     renderStats(data); renderSourceFilter(); renderJobList();
   } catch(e) {
     document.getElementById('connBanner').style.display='block';
     document.getElementById('dot').style.background='var(--a3)';
+    document.getElementById('dot').style.animation='';
     document.getElementById('scanTxt').textContent='Kein Server';
-    document.getElementById('jobList').innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px;line-height:1.8">❌ Server nicht erreichbar<br/><span style="color:var(--a3)">node server.js</span> auf dem PC starten</div>`;
+    document.getElementById('jobList').innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--mu);font-size:12px;line-height:1.8"> Server nicht erreichbar<br/><span style="color:var(--a3)">node server.js</span> auf dem PC starten</div>`;
   }
 }
 
@@ -564,11 +696,11 @@ function renderSourceFilter() {
   const sources = [...new Set(jobs.map(j=>j.source).filter(Boolean))].sort();
   if (sources.length <= 1) { bar.style.display='none'; return; }
   bar.style.display='flex';
-  const srcIcons = {'Arbeitsagentur':'🏢','StepStone':'📌','Heise Jobs':'💻','LinkedIn':'💼','Indeed':'🔍','Arbeitnow':'🇩🇪','Remotive':'🌐','Bing':'🔎','Xing':'🔷'};
+  const srcIcons = {'Arbeitsagentur':'','StepStone':'','Heise Jobs':'','LinkedIn':'','Indeed':'','Arbeitnow':'','Remotive':'','Bing':'','Xing':''};
   bar.innerHTML = sources.map(src => {
     const off = disabledSources.has(src);
     const icon = srcIcons[src]||'•';
-    return `<button onclick="toggleSource('${src}')" style="padding:4px 10px;border-radius:20px;border:1px solid ${off?'rgba(255,255,255,.1)':'rgba(94,234,212,.4)'};background:${off?'rgba(255,255,255,.04)':'rgba(94,234,212,.12)'};color:${off?'var(--mu)':'var(--a)'};font-size:10px;font-family:\'DM Mono\',monospace;cursor:pointer;transition:all .15s;white-space:nowrap">${icon} ${src}</button>`;
+    return `<button onclick="toggleSource('${src}')" style="padding:4px 10px;border-radius:20px;border:1px solid ${off?'rgba(255,255,255,.1)':'rgba(212,132,90,.3)'};background:${off?'rgba(255,255,255,.04)':'rgba(212,132,90,.1)'};color:${off?'var(--mu)':'var(--a)'};font-size:10px;font-family:\'DM Mono\',monospace;cursor:pointer;transition:all .15s;white-space:nowrap">${icon} ${src}</button>`;
   }).join('');
 }
 
@@ -583,20 +715,25 @@ function renderJobList() {
   // Update applied tab badge
   const appliedCount = jobs.filter(j => j.status==='applied' || j.status==='interview').length;
   const tabEl = document.getElementById('tabApplied');
-  if (tabEl) tabEl.textContent = `📬 Beworben${appliedCount ? ' ('+appliedCount+')' : ''}`;
+  if (tabEl) tabEl.textContent = ` Beworben${appliedCount ? ' ('+appliedCount+')' : ''}`;
 
   let filtered;
+  const searchQ = (document.getElementById('jobSearch')?.value||'').toLowerCase().trim();
+  const matchSearch = j => !searchQ || [
+    j.title, j.company, j.location, ...(j.keywords||[])
+  ].some(v => (v||'').toLowerCase().includes(searchQ));
+
   if (jobTab==='applied') {
-    filtered = jobs.filter(j => j.status==='applied' || j.status==='interview');
+    filtered = jobs.filter(j => (j.status==='applied' || j.status==='interview') && matchSearch(j));
   } else {
     // All other tabs: exclude applied/interview jobs
     let active = jobs.filter(j => j.status !== 'applied' && j.status !== 'interview');
     // Apply source filter
     if (disabledSources.size > 0) active = active.filter(j => !disabledSources.has(j.source));
-    if      (jobTab==='remote') filtered = active.filter(j=>j.remote);
-    else if (jobTab==='local')  filtered = active.filter(j=>j.local&&!j.remote);
-    else if (jobTab==='car')    filtered = active.filter(j=>j.car);
-    else                        filtered = active;
+    if      (jobTab==='remote') filtered = active.filter(j=>j.remote && matchSearch(j));
+    else if (jobTab==='local')  filtered = active.filter(j=>j.local&&!j.remote && matchSearch(j));
+    else if (jobTab==='car')    filtered = active.filter(j=>j.car && matchSearch(j));
+    else                        filtered = active.filter(j => matchSearch(j));
   }
 
   const list=document.getElementById('jobList');
@@ -609,19 +746,19 @@ function renderJobList() {
     const [pc,pl]=sm[j.status]||['td','–'];
     const mc=j.match>=90?'var(--a)':j.match>=75?'var(--a3)':'var(--a2)';
     const tags=(j.keywords||[]).slice(0,3).map(k=>`<span class="tag ta">${k}</span>`).join('');
-    const badges=[j.remote?'<span class="tag ta">🌐 Remote</span>':'',j.car?'<span class="tag tc">🚗 Dienstwagen</span>':'',j.local&&!j.remote?'<span class="tag td">📍 Lokal</span>':''].filter(Boolean).join('');
+    const badges=[j.remote?'<span class="tag tc">Remote</span>':'',j.car?'<span class="tag te">Dienstwagen</span>':'',j.local&&!j.remote?'<span class="tag tb">Lokal</span>':''].filter(Boolean).join('');
     const isSelected=selectedJobs.has(j.id);
-    const chkStyle=`width:20px;height:20px;border-radius:6px;border:2px solid ${isSelected?'var(--a)':'var(--bd)'};background:${isSelected?'var(--a)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#07070f;transition:all .15s`;
-    return `<div class="card" style="position:relative${isSelected?';border-color:rgba(94,234,212,.4)':''}">
+    const chkStyle=`width:20px;height:20px;border-radius:6px;border:2px solid ${isSelected?'var(--a)':'var(--bd)'};background:${isSelected?'var(--a)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:#fff;transition:all .15s`;
+    return `<div class="card" style="position:relative${isSelected?';border-color:rgba(184,98,62,.35)':''};padding-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.title}</div>
-          <div style="font-size:11px;color:var(--mu2)">${j.company} · ${j.source||''}</div>
-          <div style="font-size:10px;color:var(--mu);margin-top:2px">${j.location} · ${j.posted||''}</div>
+          <div style="font-size:11px;color:var(--mu2)">${j.company} &middot; ${j.source||''}</div>
+          <div style="font-size:10px;color:var(--mu);margin-top:2px">${j.location} &middot; ${j.posted||''}</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${badges}${tags}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
-          <div onclick="toggleSelect('${j.id}')" style="${chkStyle}">${isSelected?'✓':''}</div>
+          <div onclick="toggleSelect('${j.id}')" style="${chkStyle}">${isSelected?'&#x2713;':''}</div>
           <div style="text-align:center">
             <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:${mc};line-height:1">${j.match||'?'}%</div>
             <div style="font-size:9px;color:var(--mu)">Match</div>
@@ -630,23 +767,23 @@ function renderJobList() {
         </div>
       </div>
       <div style="font-size:11px;color:var(--mu);margin-top:10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${j.desc||''}</div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button onclick="openLetter('${j.id}')" style="flex:2;background:linear-gradient(135deg,rgba(94,234,212,.8),rgba(244,114,182,.8));border:none;border-radius:10px;padding:10px;color:#07070f;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer">✍️ Anschreiben</button>
-        ${j.status==='new'?`<button onclick="quickApply('${j.id}')" style="flex:1;background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.25);border-radius:10px;padding:10px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🚀 E-Mail</button><button onclick="autoApply('${j.id}')" style="flex:1;background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);border-radius:10px;padding:10px;color:var(--a2);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">🤖 Auto</button>`:''}
-      ${j.status!=='applied'&&j.status!=='interview'?`<button onclick="markApplied('${j.id}')" title="Als beworben markieren" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:10px 10px;color:var(--mu2);font-size:12px;cursor:pointer">📬</button>`:''}
-        <a href="${j.url||'#'}" target="_blank" style="background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--mu2);font-size:14px;display:flex;align-items:center;text-decoration:none">↗</a>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <button onclick="openLetter('${j.id}')" style="flex:2;background:var(--a);border:none;border-radius:6px;padding:9px 10px;color:#fff;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-weight:600"><i data-lucide="pen-line" style="width:13px;height:13px;flex-shrink:0"></i>Anschreiben</button>
+        ${j.status==='new'?`<button onclick="quickApply('${j.id}')" style="flex:1;background:rgba(184,98,62,.08);border:1px solid rgba(184,98,62,.22);border-radius:6px;padding:9px 6px;color:var(--a);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px"><i data-lucide="mail" style="width:12px;height:12px"></i>Mail</button><button onclick="autoApply('${j.id}')" style="flex:1;background:rgba(122,82,122,.08);border:1px solid rgba(122,82,122,.22);border-radius:6px;padding:9px 6px;color:var(--a4);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px"><i data-lucide="globe" style="width:12px;height:12px"></i>Auto</button>`:''}      ${j.status!=='applied'&&j.status!=='interview'?`<button onclick="markApplied('${j.id}')" title="Als beworben markieren" style="background:rgba(78,120,48,.08);border:1px solid rgba(78,120,48,.22);border-radius:6px;padding:9px 10px;color:var(--a3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="check" style="width:14px;height:14px"></i></button>`:''}
+        <a href="${j.url||'#'}" target="_blank" style="background:rgba(150,100,50,.06);border:1px solid var(--bd);border-radius:6px;padding:9px 11px;color:var(--mu);font-size:14px;display:flex;align-items:center;text-decoration:none"><i data-lucide="external-link" style="width:14px;height:14px"></i></a>
       </div>
     </div>`;
   }).join('');
+  if(typeof lucide!=='undefined') lucide.createIcons();
 }
 
 async function markApplied(id) {
   await api('/api/jobs/'+id,'PUT',{status:'applied'});
   jobs=jobs.map(j=>j.id===id?{...j,status:'applied'}:j);
-  renderJobList(); toast('✓ Als beworben markiert');
+  renderJobList(); toast(' Als beworben markiert');
 }
 
-// ── MULTI-SELECT ──────────────────────────────────────────────────────────
+//  MULTI-SELECT 
 function toggleSelect(id) {
   if (selectedJobs.has(id)) selectedJobs.delete(id); else selectedJobs.add(id);
   renderJobList(); updateSelectBar();
@@ -663,18 +800,18 @@ async function markSelectedApplied() {
   await Promise.all(ids.map(id => api('/api/jobs/'+id,'PUT',{status:'applied'}).catch(()=>{})));
   jobs = jobs.map(j => ids.includes(j.id) ? {...j, status:'applied'} : j);
   clearSelection();
-  toast(`📬 ${ids.length} Stelle${ids.length!==1?'n':''} als beworben markiert`);
+  toast(` ${ids.length} Stelle${ids.length!==1?'n':''} als beworben markiert`);
 }
 
 async function quickApply(id) {
-  toast('⏳ Anschreiben wird erstellt...');
+  toast(' Anschreiben wird erstellt...');
   try {
     const r = await api('/api/apply','POST',{jobId:id});
-    if (r.error) { toast('❌ '+r.error); return; }
+    if (r.error) { toast(' '+r.error); return; }
     handleApplyResult(r);
     jobs = jobs.map(j=>j.id===id?{...j,status:'applied'}:j);
     renderJobList();
-  } catch(e) { toast('❌ '+e.message); }
+  } catch(e) { toast(' '+e.message); }
 }
 
 async function applySelected() {
@@ -683,7 +820,7 @@ async function applySelected() {
   const total = ids.length;
   let done = 0, ok = 0, failed = 0;
   for (const id of ids) {
-    toast(`⏳ Bewerbe ${++done}/${total}...`);
+    toast(` Bewerbe ${++done}/${total}...`);
     try {
       const r = await api('/api/apply','POST',{jobId:id});
       if (r.ok) { ok++; jobs=jobs.map(j=>j.id===id?{...j,status:'applied'}:j); }
@@ -691,60 +828,76 @@ async function applySelected() {
     } catch(e) { failed++; }
   }
   clearSelection();
-  toast(`✅ ${ok} Bewerbungen gesendet${failed?` · ${failed} fehlgeschlagen`:''}`);
+  toast(` ${ok} Bewerbungen gesendet${failed?` · ${failed} fehlgeschlagen`:''}`);
 }
 
 function handleApplyResult(r) {
   if (r.method === 'email_sent') {
-    toast('✅ E-Mail direkt gesendet' + (r.contactEmail ? ' an '+r.contactEmail : ''));
+    toast(' E-Mail direkt gesendet' + (r.contactEmail ? ' an '+r.contactEmail : ''));
   } else if (r.method === 'mailto') {
     const sub = encodeURIComponent(r.lang==='en' ? `Application: ${r.title}` : `Bewerbung: ${r.title} bei ${r.company}`);
     const body = encodeURIComponent(r.letter||'');
     window.open(`mailto:${r.contactEmail}?subject=${sub}&body=${body}`, '_blank');
-    toast('📧 E-Mail-App geöffnet – bitte absenden!');
+    toast(' E-Mail-App geöffnet – bitte absenden!');
   } else {
     // fallback: copy + open URL
     const job = jobs.find(j=>j.id===selectedJobId)||{};
     if (r.letter) navigator.clipboard?.writeText(r.letter).catch(()=>{});
     if (job.url && job.url!=='#') window.open(job.url,'_blank');
-    toast('📋 Anschreiben kopiert · Stelle geöffnet – einfügen!');
+    toast(' Anschreiben kopiert · Stelle geöffnet – einfügen!');
   }
 }
 
+let _scanPollIv = null;
+function startScanTracking() {
+  if (_scanPollIv) return; // already tracking
+  const pbar  = document.getElementById('pbar');
+  const pfill = document.getElementById('pfill');
+  const dot   = document.getElementById('dot');
+  const txt   = document.getElementById('scanTxt');
+  pbar.style.display = 'block';
+  dot.style.background = 'var(--a2)';
+  dot.style.animation  = 'pulse 1s infinite';
+  // Poll every 3s while scan is active
+  _scanPollIv = setInterval(async () => {
+    try {
+      const st = await api('/api/status');
+      if (st.scanRunning) {
+        const elapsed = st.scanStarted ? Math.round((Date.now() - new Date(st.scanStarted).getTime()) / 1000) : 0;
+        // Estimate progress based on elapsed time (assume ~480s for full scan)
+        const pct = Math.max(Math.min(elapsed / 480 * 100, 92), 4);
+        pfill.style.width = pct + '%';
+        const step = st.scanStep || 'Scannt...';
+        txt.textContent = step + (elapsed ? ' (' + elapsed + 's)' : '');
+      } else {
+        // Scan finished
+        clearInterval(_scanPollIv); _scanPollIv = null;
+        pfill.style.width = '100%';
+        dot.style.background = 'var(--a)';
+        dot.style.animation  = '';
+        txt.textContent = st.lastScan ? 'Scan: ' + timeSince(st.lastScan) : 'Bereit';
+        await loadJobs();
+        toast('Scan fertig \u00b7 ' + (st.newThisScan || 0) + ' neue Jobs');
+        setTimeout(() => { pbar.style.display = 'none'; pfill.style.width = '0%'; }, 900);
+      }
+    } catch(e) {}
+  }, 3000);
+}
+
 async function triggerScan() {
-  document.getElementById('pbar').style.display='block';
-  document.getElementById('scanTxt').textContent='Scannt...';
-  let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*2,88);document.getElementById('pfill').style.width=p+'%';},800);
   try {
-    // Always persist current keywords to server before scanning
     await api('/api/search','POST',{...searchCfg});
     const startRes = await api('/api/scan','POST');
     if (startRes?.message?.includes('läuft bereits')) {
-      toast('🔄 Scan läuft bereits – warte auf Ergebnis...');
+      toast('Scan läuft bereits...');
     } else {
-      toast('🔍 Scan gestartet (' + (searchCfg.keywords||[]).length + ' Keywords)...');
+      toast('Scan gestartet (' + (searchCfg.keywords||[]).length + ' Keywords)...');
     }
-    // Poll /api/status every 8s until scan is done
-    const poll = setInterval(async()=>{
-      try {
-        const st = await api('/api/status');
-        p = Math.min(p + 1, 95);
-        document.getElementById('pfill').style.width = p + '%';
-        if (!st.scanRunning) {
-          clearInterval(poll); clearInterval(iv);
-          document.getElementById('pfill').style.width='100%';
-          await loadJobs();
-          setTimeout(()=>{ document.getElementById('pbar').style.display='none'; },800);
-          toast('✅ Scan fertig · ' + (st.newThisScan||0) + ' neue Jobs');
-        }
-      } catch(e) {}
-    }, 8000);
-    // Safety timeout after 35 min
-    setTimeout(()=>{ clearInterval(poll); clearInterval(iv); document.getElementById('pbar').style.display='none'; }, 35*60*1000);
-  } catch(e) { clearInterval(iv); document.getElementById('pbar').style.display='none'; toast('❌ Server nicht erreichbar'); }
+    startScanTracking();
+  } catch(e) { toast('Server nicht erreichbar'); }
 }
 
-// ── COVER LETTER ──────────────────────────────────────────────────────────
+//  COVER LETTER 
 function openLetter(id) {
   selectedJobId=id; nav('letter');
   const job=jobs.find(j=>j.id===id); if(!job) return;
@@ -760,10 +913,13 @@ function openLetter(id) {
 async function generateLetter(job) {
   const out=document.getElementById('lout');
   out.value=''; out.classList.add('cursor'); currentLetter='';
+  // Reset subject display during loading
+  const subjectEl2 = document.getElementById('lout-subject');
+  subjectEl2.style.display = 'none'; out.style.borderRadius = ''; out.style.borderTop = '';
   // Live progress timer
   const isOllama = (typeof aiMode !== 'undefined' && aiMode === 'ollama');
   let elapsed = 0;
-  const spinner = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
+  const spinner = ['','','','','','','','','',''];
   let spinIdx = 0;
   const progressIv = setInterval(() => {
     elapsed++;
@@ -775,6 +931,16 @@ async function generateLetter(job) {
     clearInterval(progressIv);
     if (data.error) throw new Error(data.error);
     const text=data.letter||''; currentLetter=text;
+    // Extract and display subject line bold
+    const lines = text.split('\n');
+    const subjectEl = document.getElementById('lout-subject');
+    if (lines[0] && lines[0].trim()) {
+      subjectEl.textContent = lines[0].trim();
+      subjectEl.style.display = 'block';
+      // Attach top-radius to textarea
+      out.style.borderRadius = '0 0 6px 6px';
+      out.style.borderTop = 'none';
+    } else { subjectEl.style.display = 'none'; out.style.borderRadius = ''; out.style.borderTop = ''; }
     out.value='';
     let i=0; const iv=setInterval(()=>{if(i>=text.length){clearInterval(iv);out.classList.remove('cursor');return;}out.value+=text[i++];},10);
   } catch(e) {
@@ -785,22 +951,22 @@ async function generateLetter(job) {
     if (msg.includes('Ollama') || msg.includes('ollama')) hint = '\n\nOllama starten: ollama serve';
     else if (msg.includes('Timeout') || msg.includes('timeout')) hint = '\n\n' + (isOllama ? 'Ollama hat zu lang gebraucht. Modell evtl. noch am Laden – nochmal versuchen.' : 'API Key unter Einstellungen eintragen.');
     else hint = '\n\nAPI Key unter Einstellungen eintragen.';
-    out.value='❌ '+msg+hint;
+    out.value=' '+msg+hint;
   }
 }
 
 function regenLetter(){const j=jobs.find(j=>j.id===selectedJobId);if(j)generateLetter(j);}
-function copyLetter(){const t=document.getElementById('lout').value;navigator.clipboard?.writeText(t).then(()=>toast('📋 Kopiert!'));}
+function copyLetter(){const t=document.getElementById('lout').value;navigator.clipboard?.writeText(t).then(()=>toast(' Kopiert!'));}
 function markAppliedCurrent(){if(selectedJobId)markApplied(selectedJobId);}
 
 async function applyNow() {
   const job=jobs.find(j=>j.id===selectedJobId); if(!job) return;
   const text=document.getElementById('lout').value;
-  if (!text||text.trim().length<20){toast('❌ Anschreiben noch nicht fertig');return;}
-  toast('⏳ Bewerbung wird gesendet...');
+  if (!text||text.trim().length<20){toast(' Anschreiben noch nicht fertig');return;}
+  toast(' Bewerbung wird gesendet...');
   try {
     const r = await api('/api/apply','POST',{jobId:job.id});
-    if (r.error) { toast('❌ '+r.error); return; }
+    if (r.error) { toast(' '+r.error); return; }
     handleApplyResult(r);
     jobs=jobs.map(j=>j.id===job.id?{...j,status:'applied'}:j);
     renderJobList();
@@ -809,14 +975,14 @@ async function applyNow() {
     try { await navigator.clipboard.writeText(text); } catch(er) {}
     if (job.url&&job.url!=='#') window.open(job.url,'_blank');
     await markApplied(job.id);
-    toast('📋 Anschreiben kopiert · Stelle geöffnet – einfügen!');
+    toast(' Anschreiben kopiert · Stelle geöffnet – einfügen!');
   }
 }
 
 function downloadLetter() {
   const job=jobs.find(j=>j.id===selectedJobId);
   const text=document.getElementById('lout').value;
-  if (!text||text.trim().length<20){toast('❌ Kein Anschreiben vorhanden');return;}
+  if (!text||text.trim().length<20){toast(' Kein Anschreiben vorhanden');return;}
   const header=job?`Anschreiben – ${job.title} bei ${job.company}\n${'='.repeat(50)}\n\n`:'';
   const blob=new Blob([header+text],{type:'text/plain;charset=utf-8'});
   const a=document.createElement('a');
@@ -828,9 +994,9 @@ function downloadLetter() {
 let _letterPdfB64 = null, _letterPdfName = 'Anschreiben.pdf', _letterPdfContext = {};
 async function downloadLetterPdf() {
   const text = document.getElementById('lout').value;
-  if (!text||text.trim().length<20){toast('❌ Kein Anschreiben vorhanden');return;}
+  if (!text||text.trim().length<20){toast(' Kein Anschreiben vorhanden');return;}
   const btn = document.getElementById('dlPdfBtn');
-  btn.disabled=true; btn.textContent='⏳ PDF...';
+  btn.disabled=true; btn.textContent=' PDF...';
   try {
     const r = await api('/api/generate-pdf','POST',{ letter:text, title:_letterPdfContext.title||'', company:_letterPdfContext.company||'' });
     if (r.error) throw new Error(r.error);
@@ -842,17 +1008,17 @@ async function downloadLetterPdf() {
     a.href = URL.createObjectURL(blob);
     a.download = _letterPdfName;
     a.click(); URL.revokeObjectURL(a.href);
-  } catch(e) { toast('❌ '+e.message); }
-  finally { btn.disabled=false; btn.textContent='📄 PDF laden'; }
+  } catch(e) { toast(' '+e.message); }
+  finally { btn.disabled=false; btn.textContent=' PDF laden'; }
 }
 
 async function generateFromUrl() {
   const url = document.getElementById('letterUrl').value.trim();
-  if (!url || !/^https?:\/\//i.test(url)) { toast('❌ Bitte gültige URL eingeben'); return; }
+  if (!url || !/^https?:\/\//i.test(url)) { toast(' Bitte gültige URL eingeben'); return; }
   const btn = document.getElementById('letterUrlBtn');
   const status = document.getElementById('letterUrlStatus');
-  btn.disabled = true; btn.textContent = '⏳ ...';
-  status.style.display = 'block'; status.textContent = '🔍 Stelle wird geladen...';
+  btn.disabled = true; btn.textContent = ' ...';
+  status.style.display = 'block'; status.textContent = ' Stelle wird geladen...';
   _letterPdfB64 = null;
   try {
     const r = await api('/api/letter-from-url', 'POST', { url });
@@ -862,7 +1028,7 @@ async function generateFromUrl() {
     document.getElementById('ljCard').style.display = 'block';
     document.getElementById('ljTitle').textContent = r.title || '–';
     document.getElementById('ljComp').textContent = r.company || '–';
-    document.getElementById('ljTags').innerHTML = `<span class="tag ta">${r.lang==='en'?'🇬🇧 Englisch':'🇩🇪 Deutsch'}</span>`;
+    document.getElementById('ljTags').innerHTML = `<span class="tag ta">${r.lang==='en'?' Englisch':' Deutsch'}</span>`;
     // Show letter
     const out = document.getElementById('lout');
     document.getElementById('lsec').style.display = 'block';
@@ -879,20 +1045,20 @@ async function generateFromUrl() {
     status.style.display = 'none';
     selectedJobId = null; // not a tracked job
   } catch(e) {
-    status.textContent = '❌ ' + e.message;
-    toast('❌ ' + e.message);
+    status.textContent = ' ' + e.message;
+    toast(' ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '✍️ Erstellen';
+    btn.disabled = false; btn.textContent = 'Erstellen';
   }
 }
 
-// ── SKILLS ────────────────────────────────────────────────────────────────
+//  SKILLS 
 function renderSkills() {
   const c=document.getElementById('skillChips');
   document.getElementById('skillPh').style.display=skillSet.size?'none':'';
   const chips=[...skillSet].map(s=>{
     const safe=s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    return `<span class="chip ${cvSkills.has(s)?'chip-cv':'chip-manual'}" data-skill="${safe}">${cvSkills.has(s)?'📄':'✏️'} ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
+    return `<span class="chip ${cvSkills.has(s)?'chip-cv':'chip-manual'}" data-skill="${safe}">${cvSkills.has(s)?'':''} ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
   }).join('');
   c.innerHTML=chips+(skillSet.size?'':document.getElementById('skillPh').outerHTML);
   c.querySelectorAll('.chip[data-skill]').forEach(el=>{
@@ -908,10 +1074,10 @@ function addSkill(){
   inp.value=''; renderSkills();
 }
 
-// ── CV UPLOAD + ANALYSIS ──────────────────────────────────────────────────
+//  CV UPLOAD + ANALYSIS 
 async function handleCV(input) {
   const file=input.files[0]; if(!file) return;
-  document.getElementById('cvLabel').innerHTML=`<div style="font-size:24px;margin-bottom:4px">✅</div><div style="color:var(--a)">${file.name}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div>`;
+  document.getElementById('cvLabel').innerHTML=`<div style="font-size:24px;margin-bottom:4px"></div><div style="color:var(--a)">${file.name}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div>`;
 
   const cvProg=document.getElementById('cvProg');
   const cvFill=document.getElementById('cvProgFill');
@@ -952,18 +1118,18 @@ async function handleCV(input) {
     if (parsed.experience_summary&&!document.getElementById('pExp').value) document.getElementById('pExp').value=parsed.experience_summary;
 
     renderSkills();
-    cvSt.textContent=`✓ ${all.length} Skills gefunden`;
+    cvSt.textContent=` ${all.length} Skills gefunden`;
     cvTxt.textContent=`${all.length} Skills erkannt`;
     setTimeout(()=>{cvProg.style.display='none';cvSt.style.display='none';},3000);
-    toast(`✨ ${all.length} Skills aus Lebenslauf extrahiert!`);
+    toast(` ${all.length} Skills aus Lebenslauf extrahiert!`);
   } catch(e) {
     clearInterval(iv); cvProg.style.display='none'; cvSt.style.display='none';
-    toast('❌ '+e.message.slice(0,60));
+    toast(' '+e.message.slice(0,60));
   }
 }
 
-// ── MULTI DOCS ────────────────────────────────────────────────────────────
-const DOCTYPE=[{l:'Arbeitszeugnis',e:'📋',m:/zeugnis|arbeits/i},{l:'Bachelorzeugnis',e:'🎓',m:/bachelor|master|diplom|hochschul/i},{l:'Abiturzeugnis',e:'🏫',m:/abitur|abi|schul/i},{l:'Zertifikat',e:'🏅',m:/zertifikat|certif|aws|azure|google/i},{l:'Sonstiges',e:'📄',m:/.*/}];
+//  MULTI DOCS 
+const DOCTYPE=[{l:'Arbeitszeugnis',e:'',m:/zeugnis|arbeits/i},{l:'Bachelorzeugnis',e:'',m:/bachelor|master|diplom|hochschul/i},{l:'Abiturzeugnis',e:'',m:/abitur|abi|schul/i},{l:'Zertifikat',e:'',m:/zertifikat|certif|aws|azure|google/i},{l:'Sonstiges',e:'',m:/.*/}];
 function guessType(n){return DOCTYPE.find(t=>t.m.test(n.toLowerCase()))||DOCTYPE[DOCTYPE.length-1];}
 
 function renderDocs() {
@@ -974,7 +1140,7 @@ function renderDocs() {
   list.innerHTML=docs.map((d,i)=>`<div class="docitem">
     <span style="font-size:20px;flex-shrink:0">${d.emoji}</span>
     <div style="flex:1;min-width:0"><div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</div><div style="font-size:10px;color:var(--mu);margin-top:1px">${d.type} · ${d.size}</div></div>
-    <button onclick="removeDoc(${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0">✕</button>
+    <button onclick="removeDoc(${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0"></button>
   </div>`).join('');
 }
 
@@ -990,18 +1156,18 @@ function handleDocs(input) {
         await api('/api/upload','POST',{filename:f.name,data:base64});
         docs.push({name:f.name,size:f.size<1048576?(f.size/1024).toFixed(0)+' KB':(f.size/1048576).toFixed(1)+' MB',type:dt.l,emoji:dt.e});
         renderDocs(); saveDocs();
-      } catch(err){ toast('❌ Upload fehlgeschlagen: '+err.message); }
+      } catch(err){ toast(' Upload fehlgeschlagen: '+err.message); }
     };
     reader.readAsDataURL(f);
   });
-  toast(`⏳ ${input.files.length} Dokument(e) werden hochgeladen...`);
+  toast(` ${input.files.length} Dokument(e) werden hochgeladen...`);
   input.value='';
 }
 
 function saveDocs(){try{localStorage.setItem('jh_docs',JSON.stringify(docs));}catch(e){}}
 function loadDocs(){try{const d=localStorage.getItem('jh_docs');if(d){docs=JSON.parse(d);renderDocs();}}catch(e){}}
 
-// ── PROFILE ───────────────────────────────────────────────────────────────
+//  PROFILE 
 let langSet = new Set();
 
 function renderLangs() {
@@ -1010,7 +1176,7 @@ function renderLangs() {
   langSet.forEach(l => {
     const s = document.createElement('span');
     s.style.cssText = 'background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--a4);cursor:pointer';
-    s.textContent = l + ' ✕';
+    s.textContent = l + ' ';
     s.onclick = () => { langSet.delete(l); renderLangs(); };
     c.appendChild(s);
   });
@@ -1040,6 +1206,9 @@ async function loadProfile() {
     if(p.hochschule)document.getElementById('pHochschule').value=p.hochschule;
     if(p.abschlussjahr)document.getElementById('pAbschlussjahr').value=p.abschlussjahr;
     if(p.languages){ p.languages.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>langSet.add(s)); renderLangs(); }
+    if(p.salary) document.getElementById('pSalary').value = p.salary;
+    if(p.salaryMin) document.getElementById('pSalaryMin').value = p.salaryMin;
+    if(p.salaryMax) document.getElementById('pSalaryMax').value = p.salaryMax;
     if(p.skills){p.skills.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>skillSet.add(s));}
     if(p.cvSkills){p.cvSkills.forEach(s=>{cvSkills.add(s);skillSet.add(s);});}
     renderSkills();
@@ -1075,6 +1244,9 @@ async function saveProfile() {
     hochschule:document.getElementById('pHochschule').value,
     abschlussjahr:document.getElementById('pAbschlussjahr').value,
     languages:[...langSet].join(', '),
+    salary: parseInt(document.getElementById('pSalary').value)||null,
+    salaryMin: parseInt(document.getElementById('pSalaryMin').value)||null,
+    salaryMax: parseInt(document.getElementById('pSalaryMax').value)||null,
     skills:[...skillSet].join(', '),
     cvSkills:[...cvSkills],
     want_remote:document.getElementById('togRemote').classList.contains('on'),
@@ -1088,11 +1260,11 @@ async function saveProfile() {
     // Also update search config with location prefs
     const sc=await api('/api/search');
     await api('/api/search','POST',{...sc,location:profile.location||'Schweinfurt',radius_km:profile.radius_km,radius_car_km:profile.radius_car_km,want_remote:profile.want_remote,want_local:profile.want_local,want_car:profile.want_car});
-    toast('✓ Gespeichert');
-  } catch(e){toast('❌ Server nicht erreichbar');}
+    toast(' Gespeichert');
+  } catch(e){toast(' Server nicht erreichbar');}
 }
 
-// ── SEARCH CONFIG ─────────────────────────────────────────────────────────
+//  SEARCH CONFIG 
 const KW_SUGGESTIONS=['SAP ABAP Junior','Junior SAP Basis','UX Designer Junior','Junior UI/UX','Embedded Systems Junior','Junior Firmware Developer','Junior DevOps Engineer','Junior Data Analyst','Junior Python Developer','Junior iOS Developer','Junior Android Developer','IT-Support Junior','Junior Netzwerkadministrator'];
 
 async function loadSearchCfg() {
@@ -1142,7 +1314,7 @@ function renderSourceList() {
   if (!sources.length){list.innerHTML='<div style="font-size:11px;color:var(--mu);margin-bottom:8px">Noch keine eigenen Quellen</div>';return;}
   list.innerHTML=sources.map((s,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);border-radius:8px;margin-bottom:6px">
     <div style="flex:1;min-width:0"><div style="font-size:12px">${s.name}</div><div style="font-size:10px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.url}</div></div>
-    <button onclick="removeSrc(${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:4px 8px;color:#f87171;font-size:11px;cursor:pointer">✕</button>
+    <button onclick="removeSrc(${i})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:4px 8px;color:#f87171;font-size:11px;cursor:pointer"></button>
   </div>`).join('');
 }
 
@@ -1159,10 +1331,10 @@ function addSource(){
   renderSourceList();
 }
 
-// ── SETTINGS ──────────────────────────────────────────────────────────────
+//  SETTINGS 
 function renderIvBtns(){
   const ivs=[['30','30 Min'],['60','1 Std'],['120','2 Std'],['360','6 Std']];
-  document.getElementById('ivBtns').innerHTML=ivs.map(([v,l])=>`<button onclick="scanInterval=${v};renderIvBtns()" style="background:${scanInterval==v?'rgba(94,234,212,.2)':'var(--s2)'};border:1px solid ${scanInterval==v?'var(--a)':'var(--bd)'};border-radius:9px;padding:8px 14px;color:${scanInterval==v?'var(--a)':'var(--mu2)'};font-size:12px;font-family:'DM Mono',monospace;cursor:pointer">${l}</button>`).join('');
+  document.getElementById('ivBtns').innerHTML=ivs.map(([v,l])=>`<button onclick="scanInterval=${v};renderIvBtns()" style="background:${scanInterval==v?'rgba(212,132,90,.15)':'var(--s2)'};border:1px solid ${scanInterval==v?'var(--a)':'var(--bd)'};border-radius:6px;padding:8px 14px;color:${scanInterval==v?'var(--a)':'var(--mu2)'};font-size:12px;font-family:'DM Mono',monospace;cursor:pointer">${l}</button>`).join('');
 }
 
 async function testAnthropicKey() {
@@ -1172,7 +1344,7 @@ async function testAnthropicKey() {
   res.style.background = 'rgba(255,255,255,.04)';
   res.style.border = '1px solid var(--bd)';
   res.style.color = 'var(--mu2)';
-  res.textContent = '⏳ Teste Key & lade verfügbare Modelle...';
+  res.textContent = ' Teste Key & lade verfügbare Modelle...';
   if (key) await api('/api/config','POST',{apiKey: key});
   try {
     const d = await api('/api/test-anthropic');
@@ -1180,15 +1352,15 @@ async function testAnthropicKey() {
       ? '<br/><br/><strong style="color:var(--a4)">Verfügbare Modelle:</strong><br/>' + d.models.map(m => `• ${m}`).join('<br/>')
       : '';
     if (d.ok) {
-      res.style.background = 'rgba(94,234,212,.06)';
-      res.style.border = '1px solid rgba(94,234,212,.25)';
+      res.style.background = 'rgba(212,132,90,.06)';
+      res.style.border = '1px solid rgba(212,132,90,.2)';
       res.style.color = 'var(--a)';
-      res.innerHTML = '✅ API Key funktioniert!' + modelHtml;
+      res.innerHTML = ' API Key funktioniert!' + modelHtml;
     } else {
       res.style.background = 'rgba(239,68,68,.06)';
       res.style.border = '1px solid rgba(239,68,68,.2)';
       res.style.color = '#f87171';
-      res.innerHTML = '❌ ' + d.error + modelHtml;
+      res.innerHTML = ' ' + d.error + modelHtml;
     }
     // Auto-populate dropdown with real available models
     if (d.models && d.models.length) {
@@ -1197,17 +1369,17 @@ async function testAnthropicKey() {
       const active = d.activeModel || d.models[0];
       sel.value = active;
       await api('/api/config','POST',{anthropicModel: active});
-      if (d.ok) toast('✓ Modell: ' + active);
+      if (d.ok) toast(' Modell: ' + active);
     }
   } catch(e) {
     res.style.background = 'rgba(239,68,68,.06)';
     res.style.border = '1px solid rgba(239,68,68,.2)';
     res.style.color = '#f87171';
-    res.textContent = '❌ Server nicht erreichbar';
+    res.textContent = ' Server nicht erreichbar';
   }
 }
 
-// ── AI MODE TOGGLE ────────────────────────────────────────────────────────
+//  AI MODE TOGGLE 
 let aiMode = 'anthropic'; // 'anthropic' | 'ollama'
 
 function toggleAIMode() {
@@ -1229,7 +1401,7 @@ async function loadOllamaStatus() {
     const d = await api('/api/ollama-status');
     if (d.running) {
       const modelList = d.models.length ? d.models.join(', ') : 'Keine Modelle gefunden';
-      el.innerHTML = `<span style="color:var(--a)">✅ Ollama läuft</span><br/>Installierte Modelle: <span style="color:var(--a4)">${modelList}</span><br/>Aktives Modell: <strong style="color:var(--a)">${d.currentModel}</strong>`;
+      el.innerHTML = `<span style="color:var(--a)"> Ollama läuft</span><br/>Installierte Modelle: <span style="color:var(--a4)">${modelList}</span><br/>Aktives Modell: <strong style="color:var(--a)">${d.currentModel}</strong>`;
       // Auto-select matching model in dropdown
       if (d.models.length) {
         const sel = document.getElementById('ollamaModel');
@@ -1251,17 +1423,51 @@ async function loadOllamaStatus() {
         }
       }
     } else {
-      el.innerHTML = `<span style="color:var(--a3)">❌ Ollama nicht gefunden</span><br/>Bitte installieren und starten (ollama.com)`;
+      el.innerHTML = `<span style="color:var(--a3)"> Ollama nicht gefunden</span><br/>Bitte installieren und starten (ollama.com)`;
     }
   } catch(e) {
-    el.innerHTML = '<span style="color:var(--a3)">❌ Server nicht erreichbar</span>';
+    el.innerHTML = '<span style="color:var(--a3)"> Server nicht erreichbar</span>';
+  }
+}
+
+async function loadAiCosts() {
+  try {
+    const d = await api('/api/ai-costs');
+    const el = document.getElementById('aiCostsBody');
+    if (!el) return;
+    const eur = (d.total_cost_eur || 0).toFixed(4);
+    const usd = (d.total_cost_usd || 0).toFixed(4);
+    const since = d.session_start ? new Date(d.session_start).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) : '—';
+    const calls = d.call_count || 0;
+    const inTok = (d.total_input_tokens||0).toLocaleString('de-DE');
+    const outTok = (d.total_output_tokens||0).toLocaleString('de-DE');
+    let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">`;
+    html += `<span style="color:var(--mu)">Session seit</span><strong>${since}</strong>`;
+    html += `<span style="color:var(--mu)">API-Calls</span><strong>${calls}</strong>`;
+    html += `<span style="color:var(--mu)">Input-Tokens</span><strong>${inTok}</strong>`;
+    html += `<span style="color:var(--mu)">Output-Tokens</span><strong>${outTok}</strong>`;
+    html += `<span style="color:var(--mu)">Kosten (USD)</span><strong style="color:var(--a)">$${usd}</strong>`;
+    html += `<span style="color:var(--mu)">Kosten (EUR)</span><strong style="color:var(--a)">€${eur}</strong>`;
+    html += `</div>`;
+    if (d.recent_calls && d.recent_calls.length) {
+      html += `<div style="margin-top:10px;font-size:10px;color:var(--mu);border-top:1px solid rgba(255,255,255,.06);padding-top:8px"><strong>Letzte Calls:</strong></div>`;
+      html += `<div style="margin-top:4px;font-size:10px;line-height:1.8;color:var(--mu2)">`;
+      d.recent_calls.slice(-8).reverse().forEach(c => {
+        html += `${c.label} · ${c.model?.split('-').pop()||c.model} · ${c.input_tokens}in/${c.output_tokens}out · <span style="color:var(--a)">$${(c.cost_usd||0).toFixed(4)}</span><br/>`;
+      });
+      html += `</div>`;
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    const el = document.getElementById('aiCostsBody');
+    if (el) el.innerHTML = `<span style="color:var(--mu)">Nicht verfügbar (Ollama-Modus?)</span>`;
   }
 }
 
 async function testOllama() {
   const btn = document.getElementById('ollamaTestBtn');
   const res = document.getElementById('ollamaTestResult');
-  btn.disabled = true; btn.textContent = '⏳ Teste...';
+  btn.disabled = true; btn.textContent = ' Teste...';
   res.style.display = 'none';
   // Save current model selection first
   let ollamaModel = document.getElementById('ollamaModel')?.value || 'llama3.1:70b-instruct-q4_K_M';
@@ -1274,21 +1480,24 @@ async function testOllama() {
       res.style.background = 'rgba(52,211,153,.1)';
       res.style.border = '1px solid rgba(52,211,153,.2)';
       res.style.color = 'var(--a)';
-      res.innerHTML = `✅ Ollama antwortet · Modell: <strong>${d.model}</strong><br/>Antwort: "${d.reply}"${d.models?.length>1?'<br/>Alle Modelle: '+d.models.join(', '):''}`;
+      const visionLine = d.visionAvailable
+        ? `<br/> Vision: <strong>${d.visionModel}</strong> verfügbar`
+        : `<br/> Vision: <strong>${d.visionModel}</strong> <span style="opacity:.7">(nicht installiert · <code>ollama pull ${d.visionModel}</code>)</span>`;
+      res.innerHTML = ` Ollama antwortet · Modell: <strong>${d.model}</strong><br/>Antwort: "${d.reply}"${visionLine}${d.models?.length?'<br/><span style="opacity:.65">Alle Modelle: '+d.models.join(', ')+'</span>':''}`;
     } else {
       res.style.background = 'rgba(248,113,113,.1)';
       res.style.border = '1px solid rgba(248,113,113,.2)';
       res.style.color = 'var(--a3)';
-      res.innerHTML = `❌ ${d.error}`;
+      res.innerHTML = ` ${d.error}`;
     }
   } catch(e) {
     res.style.display = 'block';
     res.style.background = 'rgba(248,113,113,.1)';
     res.style.border = '1px solid rgba(248,113,113,.2)';
     res.style.color = 'var(--a3)';
-    res.innerHTML = `❌ ${e.message}`;
+    res.innerHTML = ` ${e.message}`;
   }
-  btn.disabled = false; btn.textContent = '🖥️ Ollama testen';
+  btn.disabled = false; btn.textContent = 'Ollama testen';
 }
 
 // Custom model input toggle
@@ -1302,13 +1511,13 @@ async function loadServerStatus(){
   try{
     const s = await api('/api/status');
     document.getElementById('srvStatus').innerHTML = `
-      <span style="color:var(--a)">✅ Server läuft</span><br/>
+      <span style="color:var(--a)"> Server läuft</span><br/>
       Letzter Scan: ${s.lastScan ? timeSince(s.lastScan) : 'noch nie'}<br/>
       Scans gesamt: ${s.scanCount}<br/>
       Jobs gespeichert: ${s.jobCount}<br/>
-      KI-Modus: <strong style="color:${s.aiMode==='ollama'?'var(--a4)':'var(--a2)'}">${s.aiMode==='ollama'?'🖥️ Ollama ('+s.ollamaModel+')':'☁️ Anthropic ('+s.anthropicModel+')'}</strong><br/>
-      API Key: ${s.apiKeySet ? '✅ vorhanden' : '❌ fehlt'}<br/>
-      E-Mail Bewerbung: ${s.smtpConfigured ? '✅ SMTP konfiguriert' : '⚠️ kein SMTP (Anschreiben wird kopiert)'}${s.userEmail?' · '+s.userEmail:''}`;
+      KI-Modus: <strong style="color:${s.aiMode==='ollama'?'var(--a4)':'var(--a2)'}">${s.aiMode==='ollama'?'Ollama ('+s.ollamaModel+')':'Anthropic ('+s.anthropicModel+')'}</strong><br/>
+      API Key: ${s.apiKeySet ? ' vorhanden' : ' fehlt'}<br/>
+      E-Mail Bewerbung: ${s.smtpConfigured ? 'SMTP aktiv' : 'kein SMTP (Anschreiben wird kopiert)'}${s.userEmail?' · '+s.userEmail:''}`;
     // Sync toggle state
     if (s.aiMode) {
       aiMode = s.aiMode;
@@ -1319,15 +1528,24 @@ async function loadServerStatus(){
       document.getElementById('anthropicSec').style.display = s.aiMode === 'anthropic' ? 'block' : 'none';
       document.getElementById('ollamaSec').style.display = s.aiMode === 'ollama' ? 'block' : 'none';
       if (s.anthropicModel) { const sel = document.getElementById('anthropicModel'); if (sel) sel.value = s.anthropicModel; CONFIG_ANTHROPIC_MODEL = s.anthropicModel; }
+      // Restore ollama model selectors
+      if (s.ollamaModel) {
+        const sel = document.getElementById('ollamaModel');
+        if (sel) { const opt = [...sel.options].find(o => o.value === s.ollamaModel); if (opt) sel.value = s.ollamaModel; }
+      }
+      if (s.ollamaVisionModel) {
+        const vsel = document.getElementById('ollamaVisionModel');
+        if (vsel) { const opt = [...vsel.options].find(o => o.value === s.ollamaVisionModel); if (opt) vsel.value = s.ollamaVisionModel; }
+      }
     }
     // Restore email/SMTP fields
     if (s.userEmail) document.getElementById('userEmail').value = s.userEmail;
   } catch(e) {
-    document.getElementById('srvStatus').innerHTML = '<span style="color:var(--a3)">❌ Server nicht erreichbar</span>';
+    document.getElementById('srvStatus').innerHTML = '<span style="color:var(--a3)"> Server nicht erreichbar</span>';
   }
 }
 
-// ── SMTP HELPERS ──────────────────────────────────────────────────────────
+//  SMTP HELPERS 
 function applySmtpPreset() {
   const p = document.getElementById('smtpPreset').value;
   const presets = {
@@ -1350,16 +1568,16 @@ async function testSmtp() {
   const pass=document.getElementById('smtpPass').value;
   const email=document.getElementById('userEmail').value.trim()||user;
   const el=document.getElementById('smtpStatus');
-  if (!host||!user||!pass){el.style.display='block';el.style.background='rgba(244,114,182,.1)';el.style.border='1px solid rgba(244,114,182,.3)';el.textContent='❌ Bitte alle SMTP-Felder ausfüllen';return;}
-  el.style.display='block';el.style.background='var(--s2)';el.style.border='1px solid var(--bd)';el.textContent='📧 Sende Test-E-Mail...';
+  if (!host||!user||!pass){el.style.display='block';el.style.background='rgba(176,125,158,.08)';el.style.border='1px solid rgba(176,125,158,.25)';el.textContent=' Bitte alle SMTP-Felder ausfüllen';return;}
+  el.style.display='block';el.style.background='var(--s2)';el.style.border='1px solid var(--bd)';el.textContent=' Sende Test-E-Mail...';
   try {
     await api('/api/config','POST',{smtpHost:host,smtpPort:parseInt(port),smtpUser:user,smtpPass:pass,userEmail:email});
     // Send a test email by creating a fake "test" apply — or just show instructions
-    el.style.background='rgba(94,234,212,.1)';el.style.border='1px solid rgba(94,234,212,.3)';
-    el.textContent=`✅ SMTP gespeichert! Beim nächsten "Bewerben" wird eine E-Mail gesendet. Bestätigung kommt an: ${email||user}`;
+    el.style.background='rgba(212,132,90,.08)';el.style.border='1px solid rgba(212,132,90,.25)';
+    el.textContent=` SMTP gespeichert! Beim nächsten "Bewerben" wird eine E-Mail gesendet. Bestätigung kommt an: ${email||user}`;
   } catch(e) {
-    el.style.background='rgba(244,114,182,.1)';el.style.border='1px solid rgba(244,114,182,.3)';
-    el.textContent='❌ '+e.message;
+    el.style.background='rgba(176,125,158,.08)';el.style.border='1px solid rgba(176,125,158,.25)';
+    el.textContent=' '+e.message;
   }
 }
 
@@ -1368,6 +1586,7 @@ async function saveSettings(){
   let anthropicModel = document.getElementById('anthropicModel')?.value || CONFIG_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
   let ollamaModel = document.getElementById('ollamaModel')?.value || 'qwen2.5:32b';
   if (ollamaModel === 'custom') ollamaModel = document.getElementById('ollamaModelCustom').value || 'qwen2.5:32b';
+  const ollamaVisionModel = document.getElementById('ollamaVisionModel')?.value || 'llava:latest';
   // Collect source toggle states
   const sources = {
     aa:        document.getElementById('srcAA')?.classList.contains('on') ?? true,
@@ -1387,7 +1606,7 @@ async function saveSettings(){
   const smtpPass = document.getElementById('smtpPass').value;
   const userEmail = document.getElementById('userEmail').value.trim();
   try {
-    await api('/api/config', 'POST', { apiKey: key || undefined, scanInterval, aiMode, ollamaModel, anthropicModel, smtpHost, smtpPort, smtpUser, smtpPass: smtpPass||undefined, userEmail });
+    await api('/api/config', 'POST', { apiKey: key || undefined, scanInterval, aiMode, ollamaModel, ollamaVisionModel, anthropicModel, smtpHost, smtpPort, smtpUser, smtpPass: smtpPass||undefined, userEmail });
     await api('/api/search', 'POST', { ...searchCfg, sources });
     searchCfg.sources = sources;
     // If Anthropic mode and key entered: auto-detect valid model
@@ -1401,36 +1620,36 @@ async function saveSettings(){
           sel.value = active;
           CONFIG_ANTHROPIC_MODEL = active;
           await api('/api/config','POST',{anthropicModel: active});
-          toast(d.ok ? '✓ Gespeichert · Modell: ' + active : '⚠️ Key gespeichert, aber: ' + d.error);
+          toast(d.ok ? ' Gespeichert · Modell: ' + active : 'Key gespeichert, aber: ' + d.error);
           loadServerStatus();
           return;
         }
       } catch(e) { /* fall through to normal toast */ }
     }
-    toast('✓ Gespeichert');
+    toast(' Gespeichert');
     loadServerStatus();
     if (aiMode === 'ollama') loadOllamaStatus();
-  } catch(e) { toast('❌ Server nicht erreichbar'); }
+  } catch(e) { toast(' Server nicht erreichbar'); }
 }
 
 async function savePin() {
   const pin = (document.getElementById('accessPin').value||'').trim();
-  if (pin && pin.length < 4) { toast('❌ PIN muss mindestens 4 Stellen haben'); return; }
+  if (pin && pin.length < 4) { toast(' PIN muss mindestens 4 Stellen haben'); return; }
   try {
     await api('/api/config','POST',{ accessPin: pin });
     authToken = '';
     localStorage.removeItem('jh_token');
     document.getElementById('accessPin').value='';
     if (pin) {
-      toast('🔐 PIN gesetzt · Bitte neu einloggen');
+      toast(' PIN gesetzt · Bitte neu einloggen');
       setTimeout(()=>{ showAuthOverlay(); },800);
     } else {
-      toast('🔓 PIN entfernt · Server ist jetzt offen');
+      toast(' PIN entfernt · Server ist jetzt offen');
     }
-  } catch(e) { toast('❌ '+e.message); }
+  } catch(e) { toast(' '+e.message); }
 }
 
-// ── RADIUS SYNC ───────────────────────────────────────────────────────────
+//  RADIUS SYNC 
 function syncRadius(which, raw) {
   const val=Math.max(1,parseInt(raw)||1);
   const slider=document.getElementById(which+'Slider');
@@ -1446,19 +1665,19 @@ async function browserSetup() {
   hint.style.display = 'block';
   try {
     const r = await api('/api/browser-setup', 'POST', {});
-    if (r.error) { toast('❌ ' + r.error); hint.style.display = 'none'; }
-    else toast('🌐 Browser geöffnet – jetzt einloggen und dann schließen');
-  } catch(e) { toast('❌ ' + e.message); hint.style.display = 'none'; }
+    if (r.error) { toast(' ' + r.error); hint.style.display = 'none'; }
+    else toast(' Browser geöffnet – jetzt einloggen und dann schließen');
+  } catch(e) { toast(' ' + e.message); hint.style.display = 'none'; }
 }
 
-// ── AUTO-APPLY ────────────────────────────────────────────────────────────
+//  AUTO-APPLY 
 let _autoLetterJob = null; // track job context for auto-apply PDF
 
 async function downloadAutoLetterPdf() {
   const text = document.getElementById('autoLetterText').textContent;
-  if (!text || text.trim().length < 20) { toast('❌ Kein Anschreiben vorhanden'); return; }
+  if (!text || text.trim().length < 20) { toast(' Kein Anschreiben vorhanden'); return; }
   const btn = document.getElementById('autoLetterPdfBtn');
-  btn.disabled = true; btn.textContent = '⏳...';
+  btn.disabled = true; btn.textContent = '...';
   try {
     const r = await api('/api/generate-pdf','POST',{ letter:text, title:_autoLetterJob?.title||'', company:_autoLetterJob?.company||'' });
     if (r.error) throw new Error(r.error);
@@ -1470,36 +1689,41 @@ async function downloadAutoLetterPdf() {
     a.href = URL.createObjectURL(blob);
     a.download = `Anschreiben_${(_autoLetterJob?.company||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]/g,'_')}.pdf`;
     a.click(); URL.revokeObjectURL(a.href);
-  } catch(e) { toast('❌ ' + e.message); }
-  finally { btn.disabled = false; btn.textContent = '📄 PDF'; }
+  } catch(e) { toast(' ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = ' PDF'; }
 }
 
 let autoSession = null, autoPollIv = null, autoCurrentJobId = null;
 
-async function autoApply(jobId) {
+async function autoApply(jobId, _inTab) {
+  // Open in a new tab unless we already ARE the auto-tab
+  if (!_inTab && !new URLSearchParams(location.search).has('auto')) {
+    window.open(location.origin + location.pathname + '?auto=' + encodeURIComponent(jobId), '_blank');
+    return;
+  }
   autoCurrentJobId = jobId;
   const job = jobs.find(j => j.id === jobId);
   _autoLetterJob = job || null;
   document.getElementById('autoJobLabel').textContent = (job?.title||'') + (job?.company ? ' · ' + job.company : '');
-  document.getElementById('autoSteps').innerHTML = '<div style="color:var(--a)">⏳ Startet...</div>';
+  document.getElementById('autoSteps').innerHTML = '<div style="color:var(--a)"> Startet...</div>';
   document.getElementById('autoScreenWrap').style.display = 'none';
   const lp = document.getElementById('autoLetterPanel');
   const lt = document.getElementById('autoLetterText');
   if (lp) lp.style.display = 'none';
   if (lt) lt.textContent = '';
   const sb = document.getElementById('autoSubmitBtn');
-  sb.style.display = 'none'; sb.disabled = false; sb.textContent = '✅ Jetzt absenden';
+  sb.style.display = 'none'; sb.disabled = false; sb.textContent = ' Jetzt absenden';
   document.getElementById('autoOverlay').style.display = 'flex';
   try {
     const r = await api('/api/auto-apply', 'POST', { jobId });
     if (r.error) {
-      document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)">❌ ${r.error}</div>`;
+      document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)"> ${r.error}</div>`;
       return;
     }
     autoSession = r.sessionId;
     autoPollIv = setInterval(pollAutoSession, 1800);
   } catch(e) {
-    document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)">❌ ${e.message}</div>`;
+    document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)"> ${e.message}</div>`;
   }
 }
 
@@ -1510,10 +1734,14 @@ async function pollAutoSession() {
     const stepsEl = document.getElementById('autoSteps');
     stepsEl.innerHTML = r.steps.filter(Boolean).map(s =>
       `<div style="color:${
-        s.startsWith('❌')||s.startsWith('⚠️') ? 'var(--a3)' :
-        s.startsWith('✅')||s.startsWith('🎉')||s.startsWith('📎')||s.startsWith('📄') ? 'var(--a)' :
-        s.startsWith('🛑')||s.startsWith('👉') ? 'var(--a4)' :
-        s.startsWith('🤖')||s.startsWith('💡') ? 'var(--mu2)' : 'var(--tx)'
+        s.startsWith('[Vision-OK]')  ? 'var(--a3)' :
+        s.startsWith('[Vision-Raw]') ? '#b89ae8' :
+        s.startsWith('[Vision-Fehler]') ? 'var(--a)' :
+        s.startsWith('[Vision]')    ? '#9a82c8' :
+        s.startsWith('OK')||s.startsWith('ok')||s.startsWith('[ok]') ? 'var(--a3)' :
+        s.startsWith('[err]')||s.startsWith('Fehler') ? 'var(--a)' :
+        s.startsWith('[info]') ? 'var(--a4)' :
+        s.startsWith('[wait]') ? 'var(--mu2)' : 'var(--tx)'
       }">${s}</div>`
     ).join('');
     stepsEl.scrollTop = stepsEl.scrollHeight;
@@ -1521,10 +1749,19 @@ async function pollAutoSession() {
       document.getElementById('autoScreenImg').src = 'data:image/jpeg;base64,' + r.screenshot;
       document.getElementById('autoScreenWrap').style.display = 'block';
     }
+    const visionDbg = document.getElementById('autoVisionDebug');
+    if (r.visionRaw) {
+      visionDbg.textContent = 'Ollama-Rohantwort:\n' + r.visionRaw;
+      visionDbg.style.display = 'block';
+    } else {
+      visionDbg.style.display = 'none';
+    }
     const submitBtn = document.getElementById('autoSubmitBtn');
     const continueBtn = document.getElementById('autoContinueBtn');
-    submitBtn.style.display = r.status === 'ready' ? 'block' : 'none';
+    const reopenBtn  = document.getElementById('autoReopenBtn');
+    submitBtn.style.display  = r.status === 'ready' ? 'block' : 'none';
     continueBtn.style.display = r.status === 'waiting_manual' ? 'block' : 'none';
+    reopenBtn.style.display   = (r.status === 'browser_closed' || r.status === 'error') ? 'block' : 'none';
     if (r.letter) {
       const lp = document.getElementById('autoLetterPanel');
       const lt = document.getElementById('autoLetterText');
@@ -1537,6 +1774,17 @@ async function pollAutoSession() {
   } catch(e) {}
 }
 
+async function autoReopen() {
+  if (!autoSession) return;
+  const btn = document.getElementById('autoReopenBtn');
+  btn.disabled = true; btn.textContent = '⏳ Öffne Browser...';
+  try {
+    const r = await api('/api/auto-apply/' + autoSession + '/reopen', 'POST', {});
+    if (r.error) toast(' ' + r.error);
+  } catch(e) { toast(' ' + e.message); }
+  btn.disabled = false; btn.textContent = '🌐 Browser öffnen';
+}
+
 async function autoContinue() {
   if (!autoSession) return;
   document.getElementById('autoContinueBtn').style.display = 'none';
@@ -1546,20 +1794,20 @@ async function autoContinue() {
 async function autoSubmit() {
   if (!autoSession) return;
   const btn = document.getElementById('autoSubmitBtn');
-  btn.disabled = true; btn.textContent = '⏳ Wird abgesendet...';
+  btn.disabled = true; btn.textContent = ' Wird abgesendet...';
   try {
     const r = await api('/api/auto-apply/' + autoSession + '/submit', 'POST', {});
-    if (r.error) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)">❌ ${r.error}</div>`; btn.disabled=false; btn.textContent='✅ Jetzt absenden'; return; }
+    if (r.error) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)"> ${r.error}</div>`; btn.disabled=false; btn.textContent=' Jetzt absenden'; return; }
     if (r.screenshot) {
       document.getElementById('autoScreenImg').src = 'data:image/jpeg;base64,' + r.screenshot;
       document.getElementById('autoScreenWrap').style.display = 'block';
     }
-    document.getElementById('autoSteps').innerHTML += '<div style="color:var(--a)">🎉 Bewerbung erfolgreich abgesendet!</div>';
+    document.getElementById('autoSteps').innerHTML += '<div style="color:var(--a)"> Bewerbung erfolgreich abgesendet!</div>';
     btn.style.display = 'none';
     jobs = jobs.map(j => j.id===autoCurrentJobId ? {...j,status:'applied'} : j);
     renderJobList();
     clearInterval(autoPollIv); autoPollIv = null;
-  } catch(e) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)">❌ ${e.message}</div>`; btn.disabled=false; btn.textContent='✅ Jetzt absenden'; }
+  } catch(e) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)"> ${e.message}</div>`; btn.disabled=false; btn.textContent=' Jetzt absenden'; }
 }
 
 async function autoClose() {
@@ -1582,7 +1830,7 @@ let _voiceRecog = null, _voiceActive = false;
 function toggleVoice() {
   if (_voiceActive) { stopVoice(); return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { toast('❌ Spracherkennung nur in Chrome/Edge am PC (localhost) verfügbar'); return; }
+  if (!SR) { toast(' Spracherkennung nur in Chrome/Edge am PC (localhost) verfügbar'); return; }
   _voiceRecog = new SR();
   _voiceRecog.lang = 'de-DE';
   _voiceRecog.continuous = false;
@@ -1592,33 +1840,33 @@ function toggleVoice() {
     document.getElementById('autoInstructInput').value = text;
     sendInstruct();
   };
-  _voiceRecog.onend = () => { _voiceActive = false; const vb = document.getElementById('autoVoiceBtn'); if(vb) { vb.textContent='🎙️'; vb.style.background='rgba(129,140,248,.15)'; } };
+  _voiceRecog.onend = () => { _voiceActive = false; const vb = document.getElementById('autoVoiceBtn'); if(vb) { vb.textContent='[mic]'; vb.style.background='rgba(176,125,158,.12)'; } };
   _voiceRecog.onerror = (ev) => {
     const msgs = {
-      'not-allowed': '🎙️ Mikrofon-Zugriff verweigert – bitte in Browser-Einstellungen erlauben',
-      'network': '🎙️ Kein Internet – Speech API benötigt Verbindung',
-      'no-speech': '🎙️ Keine Sprache erkannt – nochmal versuchen',
-      'service-not-allowed': '🎙️ Speech Service nicht verfügbar (nur HTTPS oder localhost)',
-      'audio-capture': '🎙️ Kein Mikrofon gefunden',
+      'not-allowed': 'Mikrofon-Zugriff verweigert – bitte in Browser-Einstellungen erlauben',
+      'network': 'Kein Internet – Speech API benötigt Verbindung',
+      'no-speech': 'Keine Sprache erkannt – nochmal versuchen',
+      'service-not-allowed': 'Speech Service nicht verfügbar (nur HTTPS oder localhost)',
+      'audio-capture': 'Kein Mikrofon gefunden',
     };
-    toast(msgs[ev.error] || `🎙️ Fehler: ${ev.error}`);
+    toast(msgs[ev.error] || `Fehler: ${ev.error}`);
     stopVoice();
   };
   _voiceRecog.start();
   _voiceActive = true;
   const vb = document.getElementById('autoVoiceBtn');
-  if (vb) { vb.textContent='⏹️'; vb.style.background='rgba(244,114,182,.25)'; }
+  if (vb) { vb.textContent='[mic]'; vb.style.background='rgba(176,125,158,.2)'; }
 }
 function stopVoice() {
   _voiceActive = false;
   try { _voiceRecog?.stop(); } catch(e) {}
   const vb = document.getElementById('autoVoiceBtn');
-  if (vb) { vb.textContent='🎙️'; vb.style.background='rgba(129,140,248,.15)'; }
+  if (vb) { vb.textContent='[mic]'; vb.style.background='rgba(176,125,158,.12)'; }
 }
 
 function copyLetter() {
   const t = document.getElementById('autoLetterText')?.textContent||'';
-  navigator.clipboard.writeText(t).then(()=>toast('📋 Anschreiben kopiert!')).catch(()=>{});
+  navigator.clipboard.writeText(t).then(()=>toast(' Anschreiben kopiert!')).catch(()=>{});
 }
 function toggleLetter() {
   const body = document.getElementById('autoLetterBody');
@@ -1626,21 +1874,21 @@ function toggleLetter() {
   if (!body) return;
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
-  btn.textContent = open ? '▼ anzeigen' : '▲ verbergen';
+  btn.textContent = open ? ' anzeigen' : ' verbergen';
 }
 
-// ── FILE UPLOAD ───────────────────────────────────────────────────────────
+//  FILE UPLOAD 
 async function uploadFile(input) {
   const file = input.files[0]; if (!file) return;
-  toast('⏳ ' + file.name + ' wird hochgeladen...');
+  toast(' ' + file.name + ' wird hochgeladen...');
   const reader = new FileReader();
   reader.onload = async e => {
     const base64 = e.target.result.split(',')[1];
     try {
       await api('/api/upload', 'POST', { filename: file.name, data: base64 });
-      toast('✅ ' + file.name + ' hochgeladen');
+      toast(' ' + file.name + ' hochgeladen');
       loadFileList();
-    } catch(err) { toast('❌ Upload fehlgeschlagen: ' + err.message); }
+    } catch(err) { toast(' Upload fehlgeschlagen: ' + err.message); }
   };
   reader.readAsDataURL(file);
   input.value = '';
@@ -1657,7 +1905,7 @@ async function loadFileList() {
     }
     el.innerHTML = files.map(f =>
       `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;margin-bottom:5px">
-        <span style="font-size:16px">${/\.pdf$/i.test(f.name)?'📄':'📝'}</span>
+        <span style="font-size:16px">${/\.pdf$/i.test(f.name)?'':''}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
           <div style="font-size:10px;color:var(--mu2)">${(f.size/1024).toFixed(0)} KB</div>
@@ -1670,7 +1918,7 @@ async function loadFileList() {
 
 async function deleteFile(name) {
   await api('/api/files/' + encodeURIComponent(name), 'DELETE').catch(()=>{});
-  toast('🗑 Gelöscht');
+  toast(' Gelöscht');
   loadFileList();
 }
 
@@ -1683,13 +1931,13 @@ async function loadLetterList() {
     el.innerHTML = letters.map(f => {
       const dt = f.created ? new Date(f.created).toLocaleDateString('de-DE') : '';
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;margin-bottom:5px">
-        <span style="font-size:16px">✉️</span>
+        <span style="font-size:11px;color:var(--mu2);flex-shrink:0">PDF</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name.replace('_anschreiben_','').replace('.pdf','')}</div>
           <div style="font-size:10px;color:var(--mu2)">${dt} · ${(f.size/1024).toFixed(0)} KB</div>
         </div>
-        <a href="${BASE}/uploads/${encodeURIComponent(f.name)}${authToken?'?token='+encodeURIComponent(authToken):''}" download="${f.name}" style="background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.2);border-radius:7px;padding:5px 9px;color:var(--a);font-size:11px;text-decoration:none;flex-shrink:0">↓</a>
-        <button onclick="deleteLetter('${f.name.replace(/'/g,'\\\'')}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0">✕</button>
+        <a href="${BASE}/uploads/${encodeURIComponent(f.name)}${authToken?'?token='+encodeURIComponent(authToken):''}" download="${f.name}" style="background:rgba(212,132,90,.08);border:1px solid rgba(212,132,90,.15);border-radius:7px;padding:5px 9px;color:var(--a);font-size:11px;text-decoration:none;flex-shrink:0">↓</a>
+        <button onclick="deleteLetter('${f.name.replace(/'/g,'\\\'')}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0"></button>
       </div>`;
     }).join('');
   } catch(e) {}
@@ -1697,11 +1945,11 @@ async function loadLetterList() {
 
 async function deleteLetter(name) {
   await api('/api/files/'+encodeURIComponent(name),'DELETE').catch(()=>{});
-  toast('🗑 Anschreiben gelöscht');
+  toast(' Anschreiben gelöscht');
   loadLetterList();
 }
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
+//  TOAST 
 function toast(msg){
   const t=document.createElement('div');
   t.textContent=msg;
@@ -1709,7 +1957,7 @@ function toast(msg){
   document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
 }
 
-// ── AUTH ──────────────────────────────────────────────────────────────────
+//  AUTH 
 function showAuthOverlay() {
   document.getElementById('authOverlay').style.display='flex';
   setTimeout(()=>document.getElementById('authPinInput').focus(),100);
@@ -1732,7 +1980,7 @@ async function doLogin() {
       document.getElementById('authPinInput').value='';
       document.getElementById('authPinInput').focus();
     }
-  } catch(e) { toast('❌ Verbindungsfehler'); }
+  } catch(e) { toast(' Verbindungsfehler'); }
 }
 
 async function checkAuthAndStart() {
@@ -1751,53 +1999,86 @@ async function checkAuthAndStart() {
 }
 
 async function startApp() {
+  if(typeof lucide!=='undefined') lucide.createIcons();
+  _renderBreadcrumb(); // init breadcrumb
   loadDocs();
   await loadSearchCfg();
   await loadProfile();
   loadFileList();
   loadLetterList();
-  loadJobs();
+  await loadJobs();
+  // Auto-apply tab: ?auto=JOBID opens overlay automatically
+  const _autoParam = new URLSearchParams(location.search).get('auto');
+  if (_autoParam) {
+    document.title = 'Bot läuft…';
+    setTimeout(() => autoApply(_autoParam, true), 400);
+  }
   setInterval(loadJobs,60000);
+  // Background scan-status poller – updates badge without re-rendering job list
+  setInterval(async()=>{
+    try {
+      const st = await api('/api/status');
+      updateScanBadge(st);
+    } catch(e){}
+  }, 10000);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────
+function updateScanBadge(data) {
+  const dot = document.getElementById('dot');
+  const txt = document.getElementById('scanTxt');
+  if (data.scanRunning) {
+    dot.style.background = 'var(--a2)';
+    dot.style.animation  = 'pulse 1s infinite';
+    const elapsed = data.scanStarted ? Math.round((Date.now()-new Date(data.scanStarted).getTime())/1000) : 0;
+    txt.textContent = (data.scanStep || 'Scannt...') + (elapsed ? ' ('+elapsed+'s)' : '');
+    startScanTracking(); // start unified tracker if not already running
+  } else {
+    dot.style.background = 'var(--a)';
+    dot.style.animation  = '';
+    txt.textContent = data.lastScan ? 'Scan: '+timeSince(data.lastScan) : 'Bereit';
+  }
+}
+
+//  INIT 
 async function init(){
   checkAuthAndStart();
 }
 init();
 </script>
-<!-- ── AUTO-APPLY OVERLAY ─────────────────────────────────────────────── -->
+<!--  AUTO-APPLY OVERLAY  -->
 <div id="autoOverlay" style="display:none;position:fixed;inset:0;background:rgba(7,7,15,.97);z-index:300;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto">
   <div style="width:100%;max-width:520px;padding-top:16px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      <div style="font-size:22px">🤖</div>
+      <div style="font-size:22px"></div>
       <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:.01em">Browser-Bewerbung</div>
     </div>
     <div id="autoJobLabel" style="font-size:11px;color:var(--mu2);margin-bottom:14px;padding-left:2px"></div>
-    <div id="autoSteps" style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;max-height:220px;overflow-y:auto;font-size:11px;line-height:2.1;font-family:'DM Mono',monospace;margin-bottom:12px;color:var(--mu2)"></div>
+    <div id="autoSteps" style="background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:14px 16px;max-height:220px;overflow-y:auto;font-size:11px;line-height:2.1;font-family:'DM Mono',monospace;margin-bottom:12px;color:var(--mu2)"></div>
     <div id="autoScreenWrap" style="display:none;margin-bottom:12px">
-      <div style="font-size:10px;color:var(--mu2);margin-bottom:5px">📸 Browser-Vorschau (klicken zum Vergrößern)</div>
+      <div style="font-size:10px;color:var(--mu2);margin-bottom:5px">Was die KI gerade sieht (klicken zum Vergrößern)</div>
       <img id="autoScreenImg" style="width:100%;border-radius:8px;border:1px solid var(--bd);cursor:zoom-in" onclick="this.style.width=this.style.width==='100%'?'auto':'100%'" alt="Browser Screenshot"/>
+      <div id="autoVisionDebug" style="display:none;margin-top:6px;background:rgba(74,50,120,.15);border:1px solid rgba(74,50,120,.25);border-radius:6px;padding:8px 10px;font-size:10px;font-family:'DM Mono',monospace;color:#b89ae8;word-break:break-word;white-space:pre-wrap;max-height:120px;overflow-y:auto"></div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button id="autoSubmitBtn" onclick="autoSubmit()" style="display:none;flex:2;background:linear-gradient(135deg,rgba(94,234,212,.85),rgba(244,114,182,.85));border:none;border-radius:10px;padding:13px;color:#07070f;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">✅ Jetzt absenden</button>
-      <button id="autoContinueBtn" onclick="autoContinue()" style="display:none;flex:2;background:rgba(129,140,248,.2);border:1px solid rgba(129,140,248,.5);border-radius:10px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">▶️ Fortsetzen</button>
-      <button onclick="autoClose()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:10px;padding:13px;color:var(--mu2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">✕ Schließen</button>
+      <button id="autoSubmitBtn" onclick="autoSubmit()" style="display:none;flex:2;background:var(--a);border:none;border-radius:6px;padding:13px;color:#fff;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">Jetzt absenden</button>
+      <button id="autoContinueBtn" onclick="autoContinue()" style="display:none;flex:2;background:rgba(176,125,158,.15);border:1px solid rgba(176,125,158,.4);border-radius:6px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">Fortsetzen</button>
+      <button id="autoReopenBtn" onclick="autoReopen()" style="display:none;flex:2;background:rgba(56,130,200,.15);border:1px solid rgba(56,130,200,.4);border-radius:6px;padding:13px;color:#6ab0f5;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">🌐 Browser öffnen</button>
+      <button onclick="autoClose()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:6px;padding:13px;color:var(--mu2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">Schließen</button>
     </div>
     <!-- Anweisung an Bot -->
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <input id="autoInstructInput" type="text" placeholder="Anweisung an Bot… z.B. 'Klick auf Bewerben'" onkeydown="if(event.key==='Enter')sendInstruct()" style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;color:var(--tx);font-size:12px;font-family:'DM Mono',monospace;outline:none"/>
-      <button onclick="sendInstruct()" style="background:rgba(94,234,212,.15);border:1px solid rgba(94,234,212,.3);border-radius:10px;padding:10px 14px;color:var(--a);font-size:13px;cursor:pointer;white-space:nowrap">➤</button>
-      <button id="autoVoiceBtn" onclick="toggleVoice()" style="background:rgba(129,140,248,.15);border:1px solid rgba(129,140,248,.3);border-radius:10px;padding:10px 13px;font-size:15px;cursor:pointer">🎙️</button>
+      <input id="autoInstructInput" type="text" placeholder="Anweisung an Bot… z.B. 'Klick auf Bewerben'" onkeydown="if(event.key==='Enter')sendInstruct()" style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:10px 13px;color:var(--tx);font-size:12px;font-family:'DM Mono',monospace;outline:none"/>
+      <button onclick="sendInstruct()" style="background:rgba(212,132,90,.15);border:1px solid rgba(212,132,90,.3);border-radius:6px;padding:10px 14px;color:var(--a);font-size:13px;cursor:pointer;white-space:nowrap">&rarr;</button>
+      <button id="autoVoiceBtn" onclick="toggleVoice()" style="background:rgba(176,125,158,.12);border:1px solid rgba(176,125,158,.25);border-radius:6px;padding:10px 13px;font-size:12px;cursor:pointer;color:var(--a4);font-family:'DM Mono',monospace">Stimme</button>
     </div>
     <!-- Anschreiben-Panel -->
-    <div id="autoLetterPanel" style="display:none;background:var(--s1);border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden">
+    <div id="autoLetterPanel" style="display:none;background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd)">
-        <span style="font-size:11px;color:var(--mu2)">📝 Generiertes Anschreiben</span>
+        <span style="font-size:11px;color:var(--mu2)">Generiertes Anschreiben</span>
         <div style="display:flex;gap:6px">
-          <button onclick="copyLetter()" style="background:rgba(94,234,212,.1);border:1px solid rgba(94,234,212,.2);border-radius:7px;padding:4px 10px;color:var(--a);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">📋 Kopieren</button>
-          <button id="autoLetterPdfBtn" onclick="downloadAutoLetterPdf()" style="background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.2);border-radius:7px;padding:4px 10px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">📄 PDF</button>
-          <button id="autoLetterToggle" onclick="toggleLetter()" style="background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">▲ verbergen</button>
+          <button onclick="copyLetter()" style="background:rgba(212,132,90,.1);border:1px solid rgba(212,132,90,.2);border-radius:6px;padding:4px 10px;color:var(--a);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">Kopieren</button>
+          <button id="autoLetterPdfBtn" onclick="downloadAutoLetterPdf()" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:4px 10px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">PDF</button>
+          <button id="autoLetterToggle" onclick="toggleLetter()" style="background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">verbergen</button>
         </div>
       </div>
       <div id="autoLetterBody" style="display:block">
@@ -1809,5 +2090,144 @@ init();
     </div>
   </div>
 </div>
+
+<!-- ── FLOATING CHAT ──────────────────────────────────────────────── -->
+<style>
+#chatBtn{position:fixed;bottom:74px;right:16px;z-index:200;display:flex;align-items:center;gap:7px;background:var(--a);color:#fff;border:none;border-radius:24px;padding:10px 16px;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 3px 16px rgba(184,98,62,.35);transition:transform .15s,box-shadow .15s}
+#chatBtn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(184,98,62,.45)}
+#chatBtn .cbdot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:.8}
+#chatWin{position:fixed;bottom:130px;right:16px;z-index:201;width:320px;max-width:calc(100vw - 32px);background:var(--s1);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 32px rgba(26,16,8,.18);display:none;flex-direction:column;overflow:hidden;resize:both}
+#chatWin.open{display:flex}
+#chatHdr{background:var(--a);color:#fff;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0}
+#chatHdr .cht{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+#chatHdr .chsub{font-size:10px;opacity:.75;margin-top:1px}
+#chatClose{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0;line-height:1;opacity:.8}
+#chatClose:hover{opacity:1}
+#chatMsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:180px;max-height:340px}
+.cm-u{align-self:flex-end;background:var(--a);color:#fff;padding:8px 12px;border-radius:12px 12px 2px 12px;font-size:12px;line-height:1.5;max-width:85%;font-family:'DM Mono',monospace;word-break:break-word}
+.cm-a{align-self:flex-start;background:var(--s2);color:var(--tx);padding:8px 12px;border-radius:12px 12px 12px 2px;font-size:12px;line-height:1.5;max-width:90%;font-family:'DM Mono',monospace;word-break:break-word;white-space:pre-wrap}
+.cm-typing{opacity:.55;font-style:italic}
+#chatFoot{padding:10px;border-top:1px solid var(--bd);display:flex;gap:7px;flex-shrink:0;background:var(--s1)}
+#chatInp{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:8px 14px;font-size:12px;font-family:'DM Mono',monospace;color:var(--tx);outline:none;resize:none;height:36px;max-height:80px;overflow-y:auto}
+#chatInp:focus{border-color:var(--a)}
+#chatSend{background:var(--a);border:none;border-radius:50%;width:36px;height:36px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#chatSend:hover{background:var(--a2)}
+#chatClear{background:none;border:none;font-size:10px;color:var(--mu);cursor:pointer;padding:0 4px;flex-shrink:0;align-self:center}
+</style>
+
+<button id="chatBtn" onclick="toggleChat()">
+  <i data-lucide="message-circle" style="width:15px;height:15px"></i>
+  <span>KI-Chat</span>
+</button>
+
+<div id="chatWin">
+  <div id="chatHdr" onmousedown="startDrag(event)">
+    <div>
+      <div class="cht">KI-Assistent</div>
+      <div class="chsub" id="chatModelLabel">Anthropic</div>
+    </div>
+    <button id="chatClose" onclick="toggleChat()">&#x2715;</button>
+  </div>
+  <div id="chatMsgs"></div>
+  <div id="chatFoot">
+    <textarea id="chatInp" placeholder="Frage stellen…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+    <button id="chatSend" onclick="sendChat()"><i data-lucide="send" style="width:14px;height:14px"></i></button>
+    <button id="chatClear" onclick="clearChat()" title="Chat leeren">✕</button>
+  </div>
+</div>
+
+<script>
+// ── Chat state ────────────────────────────────────────────────────────────
+let _chatHistory = JSON.parse(localStorage.getItem('jh_chat')||'[]');
+let _chatOpen = false;
+
+function toggleChat() {
+  _chatOpen = !_chatOpen;
+  const win = document.getElementById('chatWin');
+  win.classList.toggle('open', _chatOpen);
+  if (_chatOpen) {
+    renderChatHistory();
+    document.getElementById('chatInp').focus();
+    // Update model label
+    const lbl = document.getElementById('chatModelLabel');
+    lbl.textContent = (typeof aiMode !== 'undefined' && aiMode === 'ollama')
+      ? 'Ollama · ' + (document.getElementById('ollamaModel')?.value || 'lokal')
+      : 'Anthropic';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+}
+
+function renderChatHistory() {
+  const box = document.getElementById('chatMsgs');
+  if (!_chatHistory.length) {
+    box.innerHTML = '<div style="text-align:center;color:var(--mu);font-size:11px;padding:20px 0">Stell mir eine Frage zu deiner Bewerbung&nbsp;oder Karriere.</div>';
+    return;
+  }
+  box.innerHTML = _chatHistory.map(m =>
+    `<div class="cm-${m.role==='user'?'u':'a'}">${escapeHtml(m.content)}</div>`
+  ).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function sendChat() {
+  const inp = document.getElementById('chatInp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  inp.style.height = '36px';
+
+  _chatHistory.push({ role:'user', content: msg });
+  renderChatHistory();
+
+  // Typing indicator
+  const box = document.getElementById('chatMsgs');
+  const typing = document.createElement('div');
+  typing.className = 'cm-a cm-typing'; typing.textContent = '…';
+  box.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const data = await api('/api/chat', 'POST', { message: msg, history: _chatHistory.slice(-12) });
+    typing.remove();
+    const reply = data.reply || data.error || 'Keine Antwort';
+    _chatHistory.push({ role:'assistant', content: reply });
+    localStorage.setItem('jh_chat', JSON.stringify(_chatHistory.slice(-40)));
+    renderChatHistory();
+  } catch(e) {
+    typing.remove();
+    const errMsg = 'Fehler: ' + e.message;
+    _chatHistory.push({ role:'assistant', content: errMsg });
+    renderChatHistory();
+  }
+}
+
+function clearChat() {
+  _chatHistory = [];
+  localStorage.removeItem('jh_chat');
+  renderChatHistory();
+}
+
+// ── Drag to move ──────────────────────────────────────────────────────────
+let _drag = null;
+function startDrag(e) {
+  const win = document.getElementById('chatWin');
+  const rect = win.getBoundingClientRect();
+  _drag = { ox: e.clientX - rect.left, oy: e.clientY - rect.top };
+  win.style.right = 'auto'; win.style.bottom = 'auto';
+  win.style.left = rect.left + 'px'; win.style.top = rect.top + 'px';
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDrag);
+}
+function onDrag(e) {
+  if (!_drag) return;
+  const win = document.getElementById('chatWin');
+  win.style.left = (e.clientX - _drag.ox) + 'px';
+  win.style.top  = (e.clientY - _drag.oy) + 'px';
+}
+function stopDrag() { _drag = null; document.removeEventListener('mousemove',onDrag); document.removeEventListener('mouseup',stopDrag); }
+</script>
+
 </body>
 </html>
