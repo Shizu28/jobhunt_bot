@@ -33,7 +33,7 @@ function listUploads() {
   } catch(e) { return []; }
 }
 
-const CONFIG = { PORT: process.env.PORT || 3000, ANTHROPIC_API_KEY: '', ACCESS_PIN: '', SCAN_INTERVAL_MINUTES: 60, AI_MODE: 'anthropic', OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'llama3.1:70b-instruct-q4_K_M', OLLAMA_VISION_MODEL: 'llava:latest', SMTP_HOST: '', SMTP_PORT: 587, SMTP_USER: '', SMTP_PASS: '', USER_EMAIL: '' };
+const CONFIG = { PORT: process.env.PORT || 3000, ANTHROPIC_API_KEY: '', ACCESS_PIN: '', SCAN_INTERVAL_MINUTES: 60, AI_MODE: 'anthropic', OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'llama3.1:70b-instruct-q4_K_M', OLLAMA_VISION_MODEL: 'llava:latest', OLLAMA_LETTER_MODEL: '', SMTP_HOST: '', SMTP_PORT: 587, SMTP_USER: '', SMTP_PASS: '', USER_EMAIL: '' };
 
 // -- MODELL-ZUWEISUNG PRO AUFGABE --------------------------------------
 // haiku:  $0.80/$4.00  per 1M tokens  ï¿½ schnell, gï¿½nstig, gut fï¿½r strukturierte Aufgaben
@@ -97,7 +97,7 @@ const DEFAULT_SEARCH = {
   want_remote: true,
   want_local: true,
   want_car: true,
-  sources: { aa: true, indeed: true, stepstone: true, linkedin: true, xing: false, heise: true, google: true, remotive: true, arbeitnow: true },
+  sources: { aa: true, stepstone: true, linkedin: true, xing: false, heise: true, google: true, remotive: true, arbeitnow: true },
   custom_sources: [],
 };
 
@@ -329,135 +329,6 @@ const UA_POOL=[
   'Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0',
 ];
 function randUA(){return UA_POOL[Math.floor(Math.random()*UA_POOL.length)];}
-
-async function scrapeIndeed(kw, sc) {
-  const jobs=[];
-  try {
-    const loc=sc.location||'Deutschland';
-    const radius=Math.max(sc.radius_km||10,25);
-    const params=new URLSearchParams({q:kw,l:loc,fromage:'14',radius:String(radius),sort:'date'});
-    const ua=randUA();
-    let res=await fetchUrl(`https://de.indeed.com/rss?${params}`,{
-      timeout:22000,
-      headers:{
-        'User-Agent':ua,
-        'Accept':'application/rss+xml,application/xml,text/xml,*/*;q=0.8',
-        'Accept-Language':'de-DE,de;q=0.9,en;q=0.8',
-        'Referer':'https://de.indeed.com/',
-        'Cache-Control':'no-cache',
-      }
-    });
-
-    // Helper to parse RSS items (shared by RSS and any XML fallback)
-    const parseRSS = (body) => {
-      const found=[];
-      for (const [,item] of [...body.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0,15)) {
-        const titleM=item.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)||item.match(/<title>([\s\S]*?)<\/title>/);
-        if (!titleM) continue;
-        const parts=titleM[1].split(/ - /);
-        const title=(parts[0]||kw).trim();
-        const company=((item.match(/<source[^>]*>([\s\S]*?)<\/source>/)||[])[1]||(parts[1]||'Unbekannt')).trim();
-        const city=(parts[2]||loc).trim();
-        const guidM=item.match(/<guid[^>]*>([\s\S]*?)<\/guid>/);
-        const linkM=item.match(/<link>([\s\S]*?)<\/link>/);
-        const url=((guidM?guidM[1]:linkM?linkM[1]:'')||'').trim();
-        const jkM=url.match(/jk=([a-zA-Z0-9]+)/);
-        if (!jkM) continue;
-        let posted=new Date().toISOString().split('T')[0];
-        const dateM=item.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-        if (dateM){try{posted=new Date(dateM[1]).toISOString().split('T')[0];}catch(e){}}
-        const descM=item.match(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/)||item.match(/<description>([\s\S]*?)<\/description>/);
-        const desc=descM?descM[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,350):`${title} bei ${company}`;
-        const isRemote=/remote|homeoffice/i.test(title+' '+city+' '+desc);
-        found.push({id:'in_'+jkM[1],title,company,
-          location:isRemote?'Remote':city,remote:isRemote,local:!isRemote,
-          car:/dienstwagen|firmenwagen/i.test(desc),salary:null,posted,
-          keywords:extractKw(title+' '+desc.slice(0,300)),desc,
-          url:`https://de.indeed.com/viewjob?jk=${jkM[1]}`,
-          source:'Indeed',status:'new',match:0,scrapedAt:new Date().toISOString()});
-      }
-      return found;
-    };
-
-    if (res.status===200 && res.body.includes('<item>')) {
-      jobs.push(...parseRSS(res.body));
-    } else {
-      // Try at.indeed.com (Austria ï¿½ often less blocked)
-      const atParams=new URLSearchParams({q:kw,l:'Deutschland',fromage:'14',radius:String(radius),sort:'date'});
-      const rssAt=await fetchUrl(`https://at.indeed.com/rss?${atParams}`,{
-        timeout:18000,
-        headers:{'User-Agent':ua,'Accept':'application/rss+xml,text/xml,*/*;q=0.8','Accept-Language':'de-AT,de;q=0.9','Referer':'https://at.indeed.com/'},
-      }).catch(()=>null);
-      if (rssAt&&rssAt.status===200&&rssAt.body.includes('<item>')) {
-        console.log(`  Indeed RSS ${res.status} ? at.indeed.com OK`);
-        jobs.push(...parseRSS(rssAt.body));
-      } else {
-        // HTML fallback
-        console.log(`  Indeed RSS ${res.status} ? HTML-Fallback`);
-        const htmlRes=await fetchUrl(`https://de.indeed.com/jobs?${params}`,{
-          timeout:22000,
-          headers:{
-            'User-Agent':ua,
-            'Accept':'text/html,application/xhtml+xml,*/*;q=0.8',
-            'Accept-Language':'de-DE,de;q=0.9',
-            'Referer':'https://de.indeed.com/',
-            'Sec-Fetch-Dest':'document','Sec-Fetch-Mode':'navigate','Sec-Fetch-Site':'none',
-            'Upgrade-Insecure-Requests':'1',
-          }
-        }).catch(()=>null);
-        if (!htmlRes||htmlRes.status!==200){
-          console.log(`  Indeed HTML ${htmlRes?.status||'err'}`);
-        } else {
-          for (const m of htmlRes.body.matchAll(/<script type=["']application\/ld\+json["']>([\s\S]*?)<\/script>/g)) {
-            try {
-              const d=JSON.parse(m[1]);
-              for (const item of (Array.isArray(d)?d:[d])) {
-                if (item['@type']!=='JobPosting') continue;
-                const loc2=item.jobLocation?.address?.addressLocality||loc;
-                const desc=(item.description||'').replace(/<[^>]+>/g,'');
-                const isRemote=item.jobLocationType==='TELECOMMUTE'||/remote|homeoffice/i.test(loc2+' '+item.title);
-                const idM=(item.url||'').match(/jk=([a-zA-Z0-9]+)/);
-                jobs.push({id:'in_'+(idM?idM[1]:Buffer.from((item.url||'')+Math.random()).toString('base64').slice(0,12)),
-                  title:item.title||kw,company:item.hiringOrganization?.name||'Unbekannt',
-                  location:isRemote?'Remote':loc2,remote:isRemote,local:!isRemote,car:false,salary:null,
-                  posted:item.datePosted||new Date().toISOString().split('T')[0],
-                  keywords:extractKw(item.title+' '+desc.slice(0,300)),desc:desc.slice(0,350)||item.title,
-                  url:item.url||`https://de.indeed.com/jobs?q=${encodeURIComponent(item.title)}`,
-                  source:'Indeed',status:'new',match:0,scrapedAt:new Date().toISOString()});
-                if (jobs.length>=12) break;
-              }
-            } catch(e){}
-            if (jobs.length>=12) break;
-          }
-          if (jobs.length===0) {
-            const ndm=htmlRes.body.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-            if (ndm) {
-              try {
-                const nd=JSON.parse(ndm[1]);
-                const pred=i=>!!(i&&(i.title||i.jobTitle)&&typeof(i.title||i.jobTitle)==='string'&&(i.key||i.jobKey||i.id));
-                const arr=deepFindArr(nd,pred)||[];
-                for (const item of arr.slice(0,12)) {
-                  const title=item.title||item.jobTitle||kw;
-                  const company=typeof item.company==='object'?item.company?.name:item.company||'Unbekannt';
-                  const city=item.location?.label||item.locationLabel||item.city||loc;
-                  const isRemote=/remote|homeoffice/i.test(title+' '+city);
-                  const jk=item.key||item.jobKey||item.id;
-                  jobs.push({id:'in_'+String(jk),title,company:company||'Unbekannt',
-                    location:isRemote?'Remote':city,remote:isRemote,local:!isRemote,
-                    car:false,salary:null,posted:new Date().toISOString().split('T')[0],
-                    keywords:extractKw(title),desc:`${title} bei ${company||'Unbekannt'} (${city})`,
-                    url:`https://de.indeed.com/viewjob?jk=${jk}`,
-                    source:'Indeed',status:'new',match:0,scrapedAt:new Date().toISOString()});
-                }
-              } catch(e){}
-            }
-          }
-        }
-      }
-    }
-  } catch(e){console.log(`  Indeed(${kw}): ${e.message}`);}
-  return jobs;
-}
 
 // Recursively find first array in nested object whose items satisfy pred
 function deepFindArr(o,pred,d=0){
@@ -731,7 +602,7 @@ async function scrapeBing(kw, sc) {
       if (jobs.length>0) return jobs;
     }
     // Strategy 2: Bing Web Search with job site filter
-    const query=`${kw} Stelle site:stepstone.de OR site:arbeitsagentur.de OR site:indeed.de ${city}`;
+    const query=`${kw} Stelle site:stepstone.de OR site:arbeitsagentur.de ${city}`;
     const res=await fetchUrl(
       `https://www.bing.com/search?q=${encodeURIComponent(query)}&mkt=de-DE&cc=DE&count=15&setlang=de-DE`,
       {timeout:18000,headers:{
@@ -1061,7 +932,7 @@ async function askVisionAI(screenshotBase64, context, logCallback = null) {
   if (!screenshotBase64) {
     return { action: 'fill_form', target: '', value: '', reason: 'Kein Screenshot' };
   }
-  const { job, profile, history, cvPath, letterPdfPath, extraInstruction, extraDocs } = context;
+  const { job, profile, history, cvPath, letterPdfPath, extraInstruction, extraDocs, page } = context;
   const prompt = `Browser-Bewerbungsassistent. Analysiere Screenshot, waehle EINE Aktion.
 PROFIL: ${profile.name||''} | ${profile.email||''} | ${profile.phone||''} | ${profile.location||''}
 JOB: ${job.title||''} @ ${job.company||''}
@@ -1078,57 +949,119 @@ Regeln: Login/CAPTCHA->need_manual. Danke/Erfolgreich->done. Review+Absenden->su
   if (CONFIG.AI_MODE === 'ollama') {
     const visionModel = CONFIG.OLLAMA_VISION_MODEL || 'llava:latest';
     try {
-      console.log(`[VisionAI] Ollama 2-step (${visionModel} + ${CONFIG.OLLAMA_MODEL})...`);
-      if (logCallback) logCallback(`[Vision] Screenshot -> ${visionModel} beschreibt Seite...`);
+      console.log(`[VisionAI] Ollama DOM+qwen (${CONFIG.OLLAMA_MODEL})...`);
 
-      // Step 1: Vision model describes the page (no JSON needed, just natural language)
-      const descPrompt = 'Describe this browser screenshot in detail. List all visible buttons, form fields, links and text. What is the purpose of this page?';
-      const pageDescription = await callOllamaVision(screenshotBase64, descPrompt);
-      console.log('[VisionAI] Beschreibung:', pageDescription.slice(0,200));
-      if (logCallback) logCallback(`[Vision-Raw] ${pageDescription.slice(0, 300)}`);
+      // Step 1: Extract page content via DOM (reliable, no hallucination)
+      let pageDescription = '';
+      if (page) {
+        try {
+          pageDescription = await page.evaluate(() => {
+            const title = document.title || '';
+            const url = location.href;
+            // Visible buttons
+            const btns = [...document.querySelectorAll('button,[role=button],input[type=submit],input[type=button],a[class*=btn],a[class*=button]')]
+              .filter(b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top < window.innerHeight + 200; })
+              .map(b => (b.textContent||b.value||b.getAttribute('aria-label')||'').trim().replace(/\s+/g,' '))
+              .filter(t => t.length > 0 && t.length < 80)
+              .slice(0, 20);
+            // Visible form fields
+            const fields = [...document.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]),select,textarea')]
+              .filter(f => { const r = f.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
+              .map(f => {
+                const lbl = f.getAttribute('placeholder') || f.getAttribute('aria-label') ||
+                  document.querySelector(`label[for="${f.id}"]`)?.textContent?.trim() || f.name || f.type;
+                return `${f.tagName.toLowerCase()}[${f.type||'text'}]: ${lbl||'unlabeled'} (value: ${(f.value||'').slice(0,40)||'empty'})`;
+              }).slice(0, 30);
+            // Main visible text (headings + short paragraphs)
+            const headings = [...document.querySelectorAll('h1,h2,h3,[class*=title],[class*=heading]')]
+              .filter(h => { const r = h.getBoundingClientRect(); return r.width > 0 && r.top < window.innerHeight + 400; })
+              .map(h => h.textContent.trim().replace(/\s+/g,' ').slice(0,100))
+              .filter(t => t).slice(0, 10);
+            // Check for success/thank you messages
+            const bodyText = (document.body?.innerText||'').slice(0,3000);
+            const hasCookie = !!document.querySelector('[class*=cookie],[class*=consent],[id*=cookie],[id*=consent],[id*=gdpr]');
+            return JSON.stringify({ title, url, btns, fields, headings, hasCookie, bodyText: bodyText.slice(0,1500) });
+          }).catch(() => null);
+          if (pageDescription) {
+            const d = JSON.parse(pageDescription);
+            const parts = [
+              `PAGE: ${d.title} | ${d.url}`,
+              d.headings.length ? `HEADINGS: ${d.headings.join(' | ')}` : '',
+              d.btns.length ? `BUTTONS: ${d.btns.join(', ')}` : 'BUTTONS: none',
+              d.fields.length ? `FORM FIELDS:\n${d.fields.join('\n')}` : 'FORM FIELDS: none',
+              d.hasCookie ? 'COOKIE BANNER: visible' : '',
+              `PAGE TEXT (excerpt): ${d.bodyText.slice(0,600)}`,
+            ].filter(Boolean).join('\n');
+            pageDescription = parts;
+            if (logCallback) logCallback(`[Vision] DOM extrahiert: ${d.btns.length} Buttons, ${d.fields.length} Felder`);
+          }
+        } catch(domErr) {
+          pageDescription = '';
+          console.log('[VisionAI] DOM-Fehler:', domErr.message);
+        }
+      }
 
-      // Step 2: Text model decides action as JSON
+      // Step 1b: If DOM empty, fall back to llava (with hallucination guard)
+      if (!pageDescription) {
+        if (logCallback) logCallback(`[Vision] DOM leer -> ${visionModel} Fallback...`);
+        try {
+          const descPrompt = 'Describe this browser screenshot in detail. List ALL visible buttons, form fields, links, and text. What is the exact page title and URL shown? What is the purpose of this specific page?';
+          const raw = await callOllamaVision(screenshotBase64, descPrompt);
+          // Hallucination guard: reject generic descriptions
+          const isHallucination = /home.*about.*services.*contact|about us.*services.*contact.*blog/i.test(raw);
+          if (!isHallucination) {
+            pageDescription = raw;
+            if (logCallback) logCallback(`[Vision-Raw] ${raw.slice(0, 300)}`);
+          } else {
+            if (logCallback) logCallback('[Vision] llava halluziniert - ignoriert, nutze DOM-Fallback');
+            pageDescription = 'Page content could not be determined. Assume form fields may be present.';
+          }
+        } catch(e) {
+          pageDescription = 'Could not capture page state.';
+        }
+      }
+
+      // Step 2: qwen decides action based on DOM description
       if (logCallback) logCallback(`[Vision] ${CONFIG.OLLAMA_MODEL} entscheidet Aktion...`);
-      const decisionPrompt = `You are a browser automation assistant helping apply for jobs. Analyze the page description and choose ONE action.
+      const decisionPrompt = `You are a browser automation assistant helping apply for jobs. Analyze the page content and choose ONE action.
 
-PAGE DESCRIPTION:
-${pageDescription.slice(0, 800)}
+PAGE CONTENT:
+${pageDescription.slice(0, 1200)}
 
 CONTEXT:
 - Applicant: ${profile.name||''} | ${profile.email||''} | ${profile.phone||''}
 - Job: ${job.title||''} at ${job.company||''}
+- Files: CV=${cvPath?'available':'missing'} CoverLetter=${letterPdfPath?'available':'missing'}
 - Previous actions: ${history.slice(-4).join(' -> ')||'none'}
 ${extraInstruction ? '- PRIORITY INSTRUCTION: ' + extraInstruction : ''}
 
-Decide ONE action. Output ONLY a JSON object (no markdown, no explanation, just raw JSON):
-- If you see a cookie consent / privacy banner with Ablehnen/Decline/Reject/Accept buttons -> {"action":"click","target":"EXACT button text you see","value":"","reason":"dismiss cookie banner"}
-- If there is a visible Apply/Bewerben/Jetzt bewerben button -> {"action":"click","target":"EXACT button text you see","value":"","reason":"apply button visible"}
-- If there are empty form fields (name, email, etc.) -> {"action":"fill_form","target":"","value":"","reason":"form fields to fill"}
-- If there is a Next/Weiter button after filling -> {"action":"next","target":"","value":"","reason":"go to next step"}
-- If there is a Submit/Absenden/Send button with filled form -> {"action":"submit","target":"","value":"","reason":"ready to submit"}
-- If login or CAPTCHA required -> {"action":"need_manual","target":"","value":"","reason":"describe what is needed"}
-- If success/thank you page -> {"action":"done","target":"","value":"","reason":"application submitted"}
-- If need to scroll to see more -> {"action":"scroll_down","target":"","value":"","reason":"more content below"}
+Output ONLY a JSON object (no markdown, no explanation):
+- Cookie/consent banner visible -> {"action":"click","target":"EXACT button text","value":"","reason":"dismiss cookie"}
+- Apply/Bewerben button visible -> {"action":"click","target":"EXACT button text","value":"","reason":"apply button"}
+- Empty form fields visible -> {"action":"fill_form","target":"","value":"","reason":"fill form fields"}
+- Next/Weiter button after filling -> {"action":"next","target":"","value":"","reason":"next step"}
+- Submit/Absenden button, form filled -> {"action":"submit","target":"","value":"","reason":"submit application"}
+- Login page or CAPTCHA -> {"action":"need_manual","target":"","value":"","reason":"login/captcha needed"}
+- Thank you / success page -> {"action":"done","target":"","value":"","reason":"submitted"}
+- Need to scroll for more content -> {"action":"scroll_down","target":"","value":"","reason":"content below"}
 
-IMPORTANT: The "target" field must contain the EXACT visible text of the button/element on the page. Never use placeholder words.`;
+IMPORTANT: Use EXACT text from PAGE CONTENT for target field.
+/no_think`;
 
-      const jsonText = await callOllama([{role:'user', content: decisionPrompt}], 120);
+      // qwen3/thinking models output <think>...</think> before JSON — strip it, allow enough tokens
+      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600);
+      const jsonText = jsonRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       console.log('[VisionAI] Entscheidung:', jsonText.slice(0,200));
       const m = jsonText.match(/\{[\s\S]*?\}/);
       if (m) {
         try {
           const parsed = JSON.parse(m[0]);
           if (parsed.action) {
-            console.log('[VisionAI] 2-step OK:', parsed.action, parsed.reason||'');
+            console.log('[VisionAI] OK:', parsed.action, parsed.reason||'');
             if (logCallback) logCallback(`[Vision-OK] ${parsed.action}: ${parsed.reason||''}`);
             return parsed;
           }
         } catch(je) {}
-      }
-      // Keyword fallback on description
-      if (/jetzt bewerben|apply now|bewerben button/i.test(pageDescription)) {
-        if (logCallback) logCallback('[Vision-OK] Bewerben-Button erkannt (Fallback)');
-        return { action: 'click', target: 'Jetzt bewerben', value: '', reason: 'Apply-Button erkannt' };
       }
       if (logCallback) logCallback('[Vision-Fehler] Kein JSON - DOM-Modus wird aktiviert');
       return { action: '__no_json__', target: '', value: '', reason: 'Kein JSON vom Textmodell' };
@@ -1274,13 +1207,11 @@ async function executeAIAction(page, decision, profile, letter, cvPath, letterPd
   return [];
 }
 
-const MAX_CONCURRENT_BOTS = 3;
-
 async function autoBrowserApply(jobId) {
-  // Check concurrent session limit
+  // Only 1 bot at a time — Chromium locks the profile directory
   const activeSessions = [...autoSessions.values()].filter(s => !['submitted','closed','error'].includes(s.status));
-  if (activeSessions.length >= MAX_CONCURRENT_BOTS) {
-    throw new Error(`Maximale Anzahl paralleler Bots erreicht (${MAX_CONCURRENT_BOTS}). Bitte einen Bot zuerst schliessen.`);
+  if (activeSessions.length >= 1) {
+    throw new Error('Ein Bot läuft bereits. Bitte erst abschliessen oder schliessen bevor ein neuer gestartet wird.');
   }
   const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
   const job = getJob(jobId);
@@ -1292,7 +1223,6 @@ async function autoBrowserApply(jobId) {
     screenshot:null, url:job.url,
     title:job.title, company:job.company,
     browser:null, page:null, submitSelector:null, letter:'',
-    _profileDir: null, // session-specific browser profile dir
   };
   autoSessions.set(sessionId, session);
 
@@ -1329,27 +1259,9 @@ async function autoBrowserApply(jobId) {
       session.steps.push('Oeffne Browser...');
       const browserProfileDir = path.join(__dirname, 'browser-profile');
       if (!fs.existsSync(browserProfileDir)) fs.mkdirSync(browserProfileDir, { recursive: true });
-
-      // Each session gets its own profile copy to avoid Chromium's single-instance lock.
-      // We copy only the Login Data & Cookies so sessions share credentials but don't conflict.
-      const sessionProfileDir = path.join(__dirname, 'browser-profile', '_sessions', sessionId);
-      fs.mkdirSync(sessionProfileDir, { recursive: true });
-      session._profileDir = sessionProfileDir;
-      // Copy Default folder (login data, cookies) from main profile
-      const mainDefault = path.join(browserProfileDir, 'Default');
-      const sessDefault = path.join(sessionProfileDir, 'Default');
-      if (fs.existsSync(mainDefault) && !fs.existsSync(sessDefault)) {
-        try {
-          fs.mkdirSync(sessDefault, { recursive: true });
-          for (const f of ['Login Data','Login Data For Account','Cookies','Web Data','Preferences','Secure Preferences']) {
-            const src = path.join(mainDefault, f);
-            if (fs.existsSync(src)) { try { fs.copyFileSync(src, path.join(sessDefault, f)); } catch(e) {} }
-          }
-        } catch(e) { console.log('[Session profile copy]', e.message); }
-      }
       const browser = await pp.launch({
         headless: false, defaultViewport: null,
-        userDataDir: sessionProfileDir,
+        userDataDir: browserProfileDir,
         args: ['--start-maximized','--no-sandbox','--disable-blink-features=AutomationControlled'],
         ignoreDefaultArgs: ['--enable-automation'],
       });
@@ -1668,7 +1580,7 @@ async function autoBrowserApply(jobId) {
         // Claude fragt: was jetzt?
         const extraInstr = (session.pendingInstructions && session.pendingInstructions.length)
           ? session.pendingInstructions.splice(0).join(' | ') : null;
-        const decision = await askVisionAI(sc, { job, profile, history: actionHistory, cvPath, letterPdfPath, extraInstruction: extraInstr, extraDocs: session.extraDocs||[] }, (msg) => {
+        const decision = await askVisionAI(sc, { job, profile, history: actionHistory, cvPath, letterPdfPath, extraInstruction: extraInstr, extraDocs: session.extraDocs||[], page: activePage }, (msg) => {
           session.steps.push(msg);
           if (msg.startsWith('[Vision-Raw]')) session.visionRaw = msg.slice(12).trim();
         });
@@ -1786,9 +1698,7 @@ async function autoBrowserApply(jobId) {
           session.browser?.close().catch(()=>{});
           autoSessions.delete(sessionId);
           // Clean up session profile dir
-          if (session._profileDir && fs.existsSync(session._profileDir)) {
-            try { fs.rmSync(session._profileDir, { recursive: true, force: true }); } catch(e) {}
-          }
+
         }
       }, 45*60*1000);
 
@@ -1950,7 +1860,7 @@ async function runScan() {
   sc.want_local  = profile.want_local;
   sc.want_car    = profile.want_car;
   // Apply defaults for sources not in saved config (migration for old configs)
-  const srcDefaults={aa:true,indeed:true,stepstone:true,linkedin:true,xing:false,heise:true,google:true,remotive:true,arbeitnow:true};
+  const srcDefaults={aa:true,stepstone:true,linkedin:true,xing:false,heise:true,google:true,remotive:true,arbeitnow:true};
   const savedSrc=sc.sources||{};
   // If config was saved before new sources existed (no remotive/arbeitnow key) ? legacy config, use all defaults
   const isLegacyConfig=savedSrc.remotive===undefined&&savedSrc.arbeitnow===undefined;
@@ -1961,8 +1871,7 @@ async function runScan() {
   console.log(`  Quellen: ${active.join(', ')}`);
   for (const kw of sc.keywords) {
     console.log(`\n  "${kw}"`);
-    if (src.aa!==false){scanStep=`"${kw}" Â· AA`;const aa=await scrapeArbeitsagentur(kw,sc);console.log(`    AA: ${aa.length}`);allNew.push(...aa);await sleep(1200);}
-    if (src.indeed!==false){scanStep=`"${kw}" Â· Indeed`;const ind=await scrapeIndeed(kw,sc);console.log(`    Indeed: ${ind.length}`);allNew.push(...ind);await sleep(1800);}
+    if (src.aa!==false){scanStep=`"${kw}" · AA`;const aa=await scrapeArbeitsagentur(kw,sc);console.log(`    AA: ${aa.length}`);allNew.push(...aa);await sleep(1200);}
     if (src.stepstone!==false){scanStep=`"${kw}" Â· StepStone`;const ss=await scrapeStepstone(kw,sc);console.log(`    SS: ${ss.length}`);allNew.push(...ss);await sleep(1500);}
     if (src.linkedin){scanStep=`"${kw}" Â· LinkedIn`;const li=await scrapeLinkedIn(kw,sc);console.log(`    LinkedIn: ${li.length}`);allNew.push(...li);await sleep(2000);}
     if (src.xing){scanStep=`"${kw}" Â· Xing`;const xi=await scrapeXing(kw,sc);console.log(`    Xing: ${xi.length}`);allNew.push(...xi);await sleep(1500);}
@@ -2057,24 +1966,25 @@ async function callAnthropic(messages, maxTokens=1000, label='callAnthropic', mo
   return d.content?.map(b => b.text||'').join('') || '';
 }
 
-async function callOllama(messages, maxTokens=1000) {
-  // Flatten any multipart messages (PDFs not supported in Ollama ï¿½ text only)
+async function callOllama(messages, maxTokens=1000, modelOverride=null) {
+  // Flatten any multipart messages (PDFs not supported in Ollama – text only)
   const flatMessages = messages.map(m => ({
     role: m.role,
     content: Array.isArray(m.content)
-      ? m.content.map(c => c.type === 'text' ? c.text : '[PDF-Dokument ï¿½ Ollama unterstï¿½tzt keine PDFs]').join('\n')
+      ? m.content.map(c => c.type === 'text' ? c.text : '[PDF-Dokument – Ollama unterstützt keine PDFs]').join('\n')
       : m.content,
   }));
   // Pre-check: test TCP connection so we get a clear error if Ollama isn't running
   try { await fetchUrl(`${CONFIG.OLLAMA_URL}/api/tags`, { timeout: 4000 }); } catch(e) {
     throw new Error(`Ollama nicht erreichbar (${CONFIG.OLLAMA_URL}). Bitte Ollama starten: ollama serve`);
   }
+  const model = modelOverride || CONFIG.OLLAMA_MODEL;
   const res = await fetchUrl(`${CONFIG.OLLAMA_URL}/api/chat`, {
     method: 'POST',
-    timeout: 600000,  // 10 min ï¿½ 70B model can be slow
+    timeout: 600000,  // 10 min – 70B model can be slow
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: CONFIG.OLLAMA_MODEL,
+      model,
       messages: flatMessages,
       stream: false,
       options: { num_predict: maxTokens, temperature: 0.75 },
@@ -2187,7 +2097,7 @@ Zeile 3+: Brieftext beginnend mit Anrede wie "Hallo," oder "Sehr geehrte Damen u
 ~270 Wï¿½rter (Betreff nicht mitgezï¿½hlt). Keywords ${(job.keywords||[]).slice(0,3).join(', ')} natï¿½rlich einbauen. KEINE ï¿½berschriften, KEIN Markdown, KEINE Sternchen, KEINE ** Zeichen, KEINE Em-Dashes (ï¿½), KEINE En-Dashes (ï¿½).`;
   }
   const raw = CONFIG.AI_MODE === 'ollama'
-    ? await callOllama([{ role: 'user', content: prompt }], 1200)
+    ? (await callOllama([{ role: 'user', content: prompt }], 1200, CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL)).replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
     : await callAnthropic([{ role: 'user', content: prompt }], 1200, 'Anschreiben', MODELS.coverLetter);
   // Strip any markdown bold/italic markers and em dashes the AI added despite instructions
   return raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').replace(/\u2014/g, '-').replace(/\u2013/g, '-').trim();
@@ -2372,8 +2282,11 @@ async function analyzeCV(base64) {
     if (!pdfText || pdfText.trim().length < 60) {
       throw new Error('PDF-Text konnte nicht extrahiert werden (ggf. gescanntes PDF). Bitte Skills manuell eintragen.');
     }
-    const prompt = `Analysiere den folgenden Lebenslauf-Text und extrahiere ALLE Skills ï¿½ auch implizite aus Berufserfahrung, Projekten und Studium.\n\nLebenslauf:\n${pdfText}\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"experience_summary":""}`;
-    return callOllama([{ role: 'user', content: prompt }], 1000);
+    const prompt = `Analysiere den folgenden Lebenslauf-Text und extrahiere ALLE Skills – auch implizite aus Berufserfahrung, Projekten und Studium.\n\nLebenslauf:\n${pdfText.slice(0, 6000)}\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"experience_summary":""}`;
+    // 3-minute timeout for CV analysis (model may need to load first)
+    const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Zeitüberschreitung nach 3 Minuten. Ollama läuft möglicherweise noch (Modell wird geladen) – bitte erneut versuchen.')),180000));
+    const cvRaw = await Promise.race([callOllama([{ role: 'user', content: prompt }], 800), timeoutPromise]);
+    return cvRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   }
   return callAnthropic([{role:'user',content:[
     {type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},
@@ -2542,7 +2455,7 @@ const server=http.createServer(async(req,res)=>{
   }
   if (pathname==='/api/status') {
     const data=loadJobs();
-    return sendJSON(res,{running:true,scanRunning,scanStarted,scanStep,lastScan:data.lastScan,scanCount:data.scanCount||0,jobCount:data.jobs?.length||0,newThisScan:data.newThisScan||0,nextScanIn:CONFIG.SCAN_INTERVAL_MINUTES,apiKeySet:!!CONFIG.ANTHROPIC_API_KEY,aiMode:CONFIG.AI_MODE,ollamaModel:CONFIG.OLLAMA_MODEL,ollamaVisionModel:CONFIG.OLLAMA_VISION_MODEL,anthropicModel:'claude-opus-4-7',smtpConfigured:!!(CONFIG.SMTP_HOST&&CONFIG.SMTP_USER&&CONFIG.SMTP_PASS),userEmail:CONFIG.USER_EMAIL||''});;
+    return sendJSON(res,{running:true,scanRunning,scanStarted,scanStep,lastScan:data.lastScan,scanCount:data.scanCount||0,jobCount:data.jobs?.length||0,newThisScan:data.newThisScan||0,nextScanIn:CONFIG.SCAN_INTERVAL_MINUTES,apiKeySet:!!CONFIG.ANTHROPIC_API_KEY,aiMode:CONFIG.AI_MODE,ollamaModel:CONFIG.OLLAMA_MODEL,ollamaVisionModel:CONFIG.OLLAMA_VISION_MODEL,ollamaLetterModel:CONFIG.OLLAMA_LETTER_MODEL||'',anthropicModel:'claude-opus-4-7',smtpConfigured:!!(CONFIG.SMTP_HOST&&CONFIG.SMTP_USER&&CONFIG.SMTP_PASS),userEmail:CONFIG.USER_EMAIL||''});;
   }
   if (pathname==='/api/config'&&req.method==='POST') {
     const body=await readBody(req);
@@ -2554,6 +2467,7 @@ const server=http.createServer(async(req,res)=>{
     if (body.aiMode) { CONFIG.AI_MODE=body.aiMode; saveEnvKey('AI_MODE', body.aiMode); }
     if (body.ollamaModel) { CONFIG.OLLAMA_MODEL=body.ollamaModel; saveEnvKey('OLLAMA_MODEL', body.ollamaModel); }
     if (body.ollamaVisionModel !== undefined) { CONFIG.OLLAMA_VISION_MODEL=body.ollamaVisionModel; saveEnvKey('OLLAMA_VISION_MODEL', body.ollamaVisionModel); }
+    if (body.ollamaLetterModel !== undefined) { CONFIG.OLLAMA_LETTER_MODEL=body.ollamaLetterModel; saveEnvKey('OLLAMA_LETTER_MODEL', body.ollamaLetterModel); }
     if (body.ollamaUrl) { CONFIG.OLLAMA_URL=body.ollamaUrl; saveEnvKey('OLLAMA_URL', body.ollamaUrl); }
     if (body.anthropicModel) CONFIG.ANTHROPIC_MODEL=body.anthropicModel;
     if (body.smtpHost    !== undefined) { CONFIG.SMTP_HOST=body.smtpHost;   saveEnvKey('SMTP_HOST',   body.smtpHost); }
@@ -2765,26 +2679,9 @@ const server=http.createServer(async(req,res)=>{
         const pp = getPuppeteer();
         // Close old browser if still alive
         if (s.browser) { try { await s.browser.close(); } catch(e) {} s.browser = null; s.page = null; }
-        // Reuse or create session profile dir
-        if (!s._profileDir) {
-          const sid2 = sid;
-          s._profileDir = path.join(__dirname, 'browser-profile', '_sessions', sid2);
-          fs.mkdirSync(s._profileDir, { recursive: true });
-          const mainDefault = path.join(__dirname, 'browser-profile', 'Default');
-          const sessDefault = path.join(s._profileDir, 'Default');
-          if (fs.existsSync(mainDefault) && !fs.existsSync(sessDefault)) {
-            try {
-              fs.mkdirSync(sessDefault, { recursive: true });
-              for (const f of ['Login Data','Login Data For Account','Cookies','Web Data','Preferences','Secure Preferences']) {
-                const src = path.join(mainDefault, f);
-                if (fs.existsSync(src)) { try { fs.copyFileSync(src, path.join(sessDefault, f)); } catch(e) {} }
-              }
-            } catch(e) {}
-          }
-        }
         const browser = await pp.launch({
           headless: false, defaultViewport: null,
-          userDataDir: s._profileDir,
+          userDataDir: path.join(__dirname, 'browser-profile'),
           args: ['--start-maximized','--no-sandbox','--disable-blink-features=AutomationControlled'],
           ignoreDefaultArgs: ['--enable-automation'],
         });
@@ -2813,13 +2710,14 @@ const server=http.createServer(async(req,res)=>{
         return sendJSON(res, { ok: true });
       } catch(e) { return sendJSON(res, { ok: false, error: e.message }, 500); }
     }
+    if (action === 'applied') {
+      // Mark job as applied manually (user confirmed via dialog)
+      if (s.jobId) updateJob(s.jobId, { status: 'applied', applied_at: new Date().toISOString() });
+      return sendJSON(res, { ok: true });
+    }
     if (action === 'close') {
       await s.browser?.close().catch(()=>{});
       autoSessions.delete(sid);
-      // Clean up session-specific browser profile
-      if (s._profileDir && fs.existsSync(s._profileDir)) {
-        try { fs.rmSync(s._profileDir, { recursive: true, force: true }); } catch(e) {}
-      }
       return sendJSON(res, { ok: true });
     }
     if (action === 'continue') {
@@ -2861,6 +2759,7 @@ function loadEnv(){
     if(process.env.AI_MODE)CONFIG.AI_MODE=process.env.AI_MODE;
     if(process.env.OLLAMA_MODEL)CONFIG.OLLAMA_MODEL=process.env.OLLAMA_MODEL;
     if(process.env.OLLAMA_VISION_MODEL)CONFIG.OLLAMA_VISION_MODEL=process.env.OLLAMA_VISION_MODEL;
+    if(process.env.OLLAMA_LETTER_MODEL)CONFIG.OLLAMA_LETTER_MODEL=process.env.OLLAMA_LETTER_MODEL;
     if(process.env.OLLAMA_URL)CONFIG.OLLAMA_URL=process.env.OLLAMA_URL;
   }catch(e){}
 }

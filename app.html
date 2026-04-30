@@ -426,7 +426,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div class="stitle">Standard-Quellen</div>
   <div class="card" id="stdSources">
     <div class="trow"><div style="font-size:13px"> Arbeitsagentur</div><div class="tog on" id="srcAA" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
-    <div class="trow"><div style="font-size:13px"> Indeed</div><div class="tog on" id="srcIn" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
     <div class="trow"><div style="font-size:13px"> StepStone</div><div class="tog on" id="srcSS" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
     <div class="trow"><div><div style="font-size:13px"> LinkedIn</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">Öffentliche Stellenanzeigen</div></div><div class="tog" id="srcLI" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
     <div class="trow"><div><div style="font-size:13px"> Xing</div><div style="font-size:10px;color:var(--mu2);margin-top:2px">DACH-Fokus</div></div><div class="tog" id="srcXi" onclick="this.classList.toggle('on')"><div class="tth"></div></div></div>
@@ -466,25 +465,64 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div style="margin-bottom:10px">
         <label class="lbl">Ollama Modell (Text)</label>
         <select class="inp" id="ollamaModel" style="cursor:pointer">
-          <option value="qwen2.5:32b">Qwen2.5 32B (alternativ)</option>
-          <option value="llama3.1:70b-instruct-q4_K_M">Llama 3.1 70B Q4  (dein Modell)</option>
-          <option value="qwen2.5:14b">Qwen2.5 14B (schneller, etwas schwächer)</option>
-          <option value="mistral:7b">Mistral 7B (sehr schnell, okay für Deutsch)</option>
           <option value="custom">Eigenes Modell...</option>
+          <optgroup label="── Neu (2025/2026) ──">
+            <option value="qwen3.6:27b">Qwen3.6 27B – Vision + Tools + Thinking (empfohlen)</option>
+            <option value="qwen3.6:35b">Qwen3.6 35B – noch stärker, langsamer</option>
+            <option value="qwen3.5:27b">Qwen3.5 27B – Vision + Tools</option>
+            <option value="qwen3-vl:8b">Qwen3-VL 8B – dediziertes Vision-Modell</option>
+            <option value="qwen3-vl:32b">Qwen3-VL 32B – starkes Vision-Modell</option>
+            <option value="mistral-small3.2:24b">Mistral Small 3.2 24B – Vision + Tools</option>
+          </optgroup>
+          <optgroup label="── Klassiker ──">
+            <option value="qwen2.5:32b">Qwen2.5 32B</option>
+            <option value="qwen2.5vl:7b">Qwen2.5-VL 7B – Vision</option>
+            <option value="qwen2.5:14b">Qwen2.5 14B</option>
+            <option value="mistral:7b">Mistral 7B</option>
+          </optgroup>
         </select>
         <input class="inp" id="ollamaModelCustom" placeholder="z.B. llama3.2:latest" style="display:none;margin-top:6px;font-size:12px"/>
       </div>
       <div style="margin-bottom:10px">
         <label class="lbl">Vision-Modell (Browser-Automatisierung)</label>
         <select class="inp" id="ollamaVisionModel" style="cursor:pointer">
-          <option value="llava:latest">LLaVA latest (empfohlen)</option>
-          <option value="llava:13b">LLaVA 13B (besser, langsamer)</option>
-          <option value="minicpm-v:latest">MiniCPM-V (kompakt, gut)</option>
-          <option value="moondream:latest">Moondream (sehr schnell, klein)</option>
-          <option value="llava-phi3:latest">LLaVA-Phi3 (schnell + gut)</option>
-          <option value="bakllava:latest">BakLLaVA</option>
+          <optgroup label="── Neu (2025/2026) ──">
+            <option value="qwen3.6:27b">Qwen3.6 27B – Vision + Tools + Thinking (empfohlen)</option>
+            <option value="qwen3-vl:8b">Qwen3-VL 8B – dediziertes Vision-Modell</option>
+            <option value="qwen3-vl:32b">Qwen3-VL 32B – starkes Vision-Modell</option>
+            <option value="qwen3.5:9b">Qwen3.5 9B – Vision + Tools, kompakt</option>
+            <option value="qwen3.5:27b">Qwen3.5 27B – Vision + Tools</option>
+            <option value="mistral-small3.2:24b">Mistral Small 3.2 24B – Vision + Tools</option>
+            <option value="gemma3:12b">Gemma 3 12B – Vision, 36M Pulls</option>
+          </optgroup>
+          <optgroup label="── Klassiker ──">
+            <option value="qwen2.5vl:7b">Qwen2.5-VL 7B</option>
+            <option value="llava:latest">LLaVA latest</option>
+            <option value="llava:13b">LLaVA 13B</option>
+            <option value="minicpm-v:latest">MiniCPM-V</option>
+            <option value="moondream:latest">Moondream (sehr schnell, klein)</option>
+          </optgroup>
         </select>
-        <div style="margin-top:5px;font-size:10px;color:var(--mu)">Einmalig herunterladen: <code style="background:var(--s2);padding:2px 5px;border-radius:3px">ollama pull llava</code> (~4 GB)</div>
+        <div style="margin-top:5px;font-size:10px;color:var(--mu)">Einmalig herunterladen: <code style="background:var(--s2);padding:2px 5px;border-radius:3px">ollama pull qwen3.6:27b</code> (~16 GB)</div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label class="lbl">Anschreiben-Modell (schnell, für Texte)</label>
+        <select class="inp" id="ollamaLetterModel" style="cursor:pointer">
+          <option value="">Wie Text-Modell (Standard)</option>
+          <optgroup label="── Schnell (empfohlen für Anschreiben) ──">
+            <option value="qwen3.5:4b">Qwen3.5 4B – sehr schnell, gut für Texte</option>
+            <option value="qwen3.5:9b">Qwen3.5 9B – schnell + besser</option>
+            <option value="gemma3:4b">Gemma 3 4B – kompakt, schnell</option>
+            <option value="mistral:7b">Mistral 7B – bewährt für Texte</option>
+            <option value="qwen2.5:7b">Qwen2.5 7B – schnell</option>
+          </optgroup>
+          <optgroup label="── Stärker ──">
+            <option value="qwen3.5:27b">Qwen3.5 27B</option>
+            <option value="qwen3.6:27b">Qwen3.6 27B</option>
+            <option value="mistral-small3.2:24b">Mistral Small 3.2 24B</option>
+          </optgroup>
+        </select>
+        <div style="margin-top:5px;font-size:10px;color:var(--mu)">Tipp: <code style="background:var(--s2);padding:2px 5px;border-radius:3px">ollama pull qwen3.5:4b</code> (~2.6 GB) – Anschreiben in ~30s statt mehreren Minuten</div>
       </div>
       <div id="ollamaStatus" style="padding:10px 12px;background:var(--s2);border-radius:6px;font-size:11px;line-height:1.7;color:var(--mu2)">
         Prüfe Ollama...
@@ -495,8 +533,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <strong style="color:var(--a4)">Setup (einmalig):</strong><br/>
         1. <a href="https://ollama.com" target="_blank" style="color:var(--a)">ollama.com</a> → Download → installieren<br/>
         2. CMD öffnen:<br/>
-        <code style="display:block;margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.3);border-radius:6px;color:var(--a4)">ollama pull qwen2.5:32b</code>
-        <span style="color:var(--mu);font-size:10px">(~19 GB Download, einmalig)</span><br/>
+        <code style="display:block;margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.3);border-radius:6px;color:var(--a4)">ollama pull qwen3.6:27b</code>
+        <span style="color:var(--mu);font-size:10px">(~16 GB Download, einmalig)</span><br/>
         3. Ollama läuft dann automatisch im Hintergrund
       </div>
       <div style="margin-top:8px;font-size:10px;color:var(--mu)">Bei gescannten PDFs (Bilder) können Skills ggf. nicht erkannt werden &rarr; dann manuell eintragen</div>
@@ -696,7 +734,7 @@ function renderSourceFilter() {
   const sources = [...new Set(jobs.map(j=>j.source).filter(Boolean))].sort();
   if (sources.length <= 1) { bar.style.display='none'; return; }
   bar.style.display='flex';
-  const srcIcons = {'Arbeitsagentur':'','StepStone':'','Heise Jobs':'','LinkedIn':'','Indeed':'','Arbeitnow':'','Remotive':'','Bing':'','Xing':''};
+  const srcIcons = {'Arbeitsagentur':'','StepStone':'','Heise Jobs':'','LinkedIn':'','Arbeitnow':'','Remotive':'','Bing':'','Xing':''};
   bar.innerHTML = sources.map(src => {
     const off = disabledSources.has(src);
     const icon = srcIcons[src]||'•';
@@ -1086,12 +1124,22 @@ async function handleCV(input) {
   cvProg.style.display='block'; cvSt.style.display='block'; cvSt.textContent='Lese PDF...';
 
   let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*7,85);cvFill.style.width=p+'%';},300);
+  // Elapsed time counter so user sees it's still working
+  const startTs = Date.now();
+  const timerIv = setInterval(()=>{
+    const secs = Math.floor((Date.now()-startTs)/1000);
+    const hint = secs > 60 ? ` (${Math.floor(secs/60)}min ${secs%60}s – Ollama lädt Modell oder analysiert, bitte warten...)` : ` (${secs}s...)`;
+    cvTxt.textContent = 'KI extrahiert Skills aus deinem Lebenslauf...' + hint;
+  }, 1000);
 
   try {
     const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+    // Upload CV to server so bot can find it and it persists after reload
+    await api('/api/upload','POST',{filename:file.name,data:base64}).catch(()=>{});
     cvSt.textContent='KI analysiert...'; cvTxt.textContent='KI extrahiert Skills aus deinem Lebenslauf...';
 
     const data=await api('/api/analyze-cv','POST',{base64,mediaType:'application/pdf'});
+    clearInterval(timerIv);
     if (data.error) throw new Error(data.error);
 
     clearInterval(iv); cvFill.style.width='100%';
@@ -1123,8 +1171,8 @@ async function handleCV(input) {
     setTimeout(()=>{cvProg.style.display='none';cvSt.style.display='none';},3000);
     toast(` ${all.length} Skills aus Lebenslauf extrahiert!`);
   } catch(e) {
-    clearInterval(iv); cvProg.style.display='none'; cvSt.style.display='none';
-    toast(' '+e.message.slice(0,60));
+    clearInterval(iv); clearInterval(timerIv); cvProg.style.display='none'; cvSt.style.display='none';
+    toast(' '+e.message.slice(0,80));
   }
 }
 
@@ -1212,6 +1260,14 @@ async function loadProfile() {
     if(p.skills){p.skills.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>skillSet.add(s));}
     if(p.cvSkills){p.cvSkills.forEach(s=>{cvSkills.add(s);skillSet.add(s);});}
     renderSkills();
+    // Restore CV label from uploaded files
+    try {
+      const { files } = await api('/api/files','GET');
+      const cvFile = files && (files.find(f=>/lebenslauf|cv|resume/i.test(f.name)) || files.find(f=>/\.pdf$/i.test(f.name)));
+      if (cvFile) {
+        document.getElementById('cvLabel').innerHTML=`<div style="font-size:24px;margin-bottom:4px"></div><div style="color:var(--a)">${cvFile.name}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div>`;
+      }
+    } catch(e) {}
     // Toggles
     if(p.want_remote===false)document.getElementById('togRemote').classList.remove('on');
     if(p.want_local===false)document.getElementById('togLocal').classList.remove('on');
@@ -1274,7 +1330,6 @@ async function loadSearchCfg() {
     const s=searchCfg.sources||{};
     const set=(id,val,def=true)=>{const el=document.getElementById(id);if(!el)return;val===false||val===true?el.classList.toggle('on',val):el.classList.toggle('on',def);};
     set('srcAA', s.aa, true);
-    set('srcIn', s.indeed, true);
     set('srcSS', s.stepstone, true);
     set('srcLI', s.linkedin, false);
     set('srcXi', s.xing, false);
@@ -1537,6 +1592,10 @@ async function loadServerStatus(){
         const vsel = document.getElementById('ollamaVisionModel');
         if (vsel) { const opt = [...vsel.options].find(o => o.value === s.ollamaVisionModel); if (opt) vsel.value = s.ollamaVisionModel; }
       }
+      if (s.ollamaLetterModel !== undefined) {
+        const lsel = document.getElementById('ollamaLetterModel');
+        if (lsel) { const opt = [...lsel.options].find(o => o.value === s.ollamaLetterModel); if (opt) lsel.value = s.ollamaLetterModel; else lsel.value = ''; }
+      }
     }
     // Restore email/SMTP fields
     if (s.userEmail) document.getElementById('userEmail').value = s.userEmail;
@@ -1587,10 +1646,10 @@ async function saveSettings(){
   let ollamaModel = document.getElementById('ollamaModel')?.value || 'qwen2.5:32b';
   if (ollamaModel === 'custom') ollamaModel = document.getElementById('ollamaModelCustom').value || 'qwen2.5:32b';
   const ollamaVisionModel = document.getElementById('ollamaVisionModel')?.value || 'llava:latest';
+  const ollamaLetterModel = document.getElementById('ollamaLetterModel')?.value || '';
   // Collect source toggle states
   const sources = {
     aa:        document.getElementById('srcAA')?.classList.contains('on') ?? true,
-    indeed:    document.getElementById('srcIn')?.classList.contains('on') ?? true,
     stepstone: document.getElementById('srcSS')?.classList.contains('on') ?? true,
     linkedin:  document.getElementById('srcLI')?.classList.contains('on') ?? false,
     xing:      document.getElementById('srcXi')?.classList.contains('on') ?? false,
@@ -1606,7 +1665,7 @@ async function saveSettings(){
   const smtpPass = document.getElementById('smtpPass').value;
   const userEmail = document.getElementById('userEmail').value.trim();
   try {
-    await api('/api/config', 'POST', { apiKey: key || undefined, scanInterval, aiMode, ollamaModel, ollamaVisionModel, anthropicModel, smtpHost, smtpPort, smtpUser, smtpPass: smtpPass||undefined, userEmail });
+    await api('/api/config', 'POST', { apiKey: key || undefined, scanInterval, aiMode, ollamaModel, ollamaVisionModel, ollamaLetterModel, anthropicModel, smtpHost, smtpPort, smtpUser, smtpPass: smtpPass||undefined, userEmail });
     await api('/api/search', 'POST', { ...searchCfg, sources });
     searchCfg.sources = sources;
     // If Anthropic mode and key entered: auto-detect valid model
@@ -1810,7 +1869,20 @@ async function autoSubmit() {
   } catch(e) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)"> ${e.message}</div>`; btn.disabled=false; btn.textContent=' Jetzt absenden'; }
 }
 
-async function autoClose() {
+async function autoClose(skipDialog) {
+  // Ask if applied (unless bot already auto-submitted or skipDialog)
+  if (!skipDialog && autoSession) {
+    const curJob = jobs.find(j => j.id === autoCurrentJobId);
+    const alreadyApplied = curJob && curJob.status === 'applied';
+    if (!alreadyApplied) {
+      const applied = confirm('Hast du dich erfolgreich beworben?\n\nJa → Job wird als „Beworben" markiert und verschoben.\nNein → Job bleibt unverändert.');
+      if (applied) {
+        await api('/api/auto-apply/' + autoSession + '/applied', 'POST', {}).catch(()=>{});
+        toast('✅ Job als beworben markiert!');
+        await loadJobs();
+      }
+    }
+  }
   clearInterval(autoPollIv); autoPollIv = null;
   if (autoSession) { api('/api/auto-apply/' + autoSession + '/close', 'POST', {}).catch(()=>{}); autoSession = null; }
   document.getElementById('autoOverlay').style.display = 'none';
@@ -1826,42 +1898,115 @@ async function sendInstruct() {
   await api('/api/auto-apply/' + autoSession + '/instruct', 'POST', { text }).catch(()=>{});
 }
 
-let _voiceRecog = null, _voiceActive = false;
-function toggleVoice() {
-  if (_voiceActive) { stopVoice(); return; }
+let _voiceRecog = null, _voiceActive = false, _voiceStream = null, _voiceAnimId = null;
+
+function _setVoiceBtn(active, label) {
+  const vb = document.getElementById('autoVoiceBtn');
+  if (!vb) return;
+  if (active) { vb.textContent = label || '⏹ Stopp'; vb.style.background = 'rgba(184,98,62,.25)'; vb.style.color = 'var(--a)'; }
+  else        { vb.textContent = '🎤 Mic';  vb.style.background = 'rgba(176,125,158,.12)'; vb.style.color = ''; }
+}
+
+function _startLevelMeter(stream) {
+  const bar = document.getElementById('autoVoiceLevel');
+  if (!bar) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const tick = () => {
+      if (!_voiceActive) { bar.style.width = '0'; ctx.close(); return; }
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      bar.style.width = Math.min(100, avg * 2) + '%';
+      _voiceAnimId = requestAnimationFrame(tick);
+    };
+    tick();
+  } catch(e) {}
+}
+
+function _startRecog() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { toast(' Spracherkennung nur in Chrome/Edge am PC (localhost) verfügbar'); return; }
+  if (!SR) return;
   _voiceRecog = new SR();
   _voiceRecog.lang = 'de-DE';
-  _voiceRecog.continuous = false;
-  _voiceRecog.interimResults = false;
+  _voiceRecog.continuous = true;
+  _voiceRecog.interimResults = true;
+  const inp = () => document.getElementById('autoInstructInput');
   _voiceRecog.onresult = e => {
-    const text = e.results[0][0].transcript;
-    document.getElementById('autoInstructInput').value = text;
-    sendInstruct();
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    if (inp()) inp().value = final || interim;
+    if (final.trim()) { sendInstruct(); }
   };
-  _voiceRecog.onend = () => { _voiceActive = false; const vb = document.getElementById('autoVoiceBtn'); if(vb) { vb.textContent='[mic]'; vb.style.background='rgba(176,125,158,.12)'; } };
   _voiceRecog.onerror = (ev) => {
+    if (ev.error === 'no-speech') {
+      if (_voiceActive) { try { _voiceRecog.stop(); } catch(e){} }
+      return;
+    }
     const msgs = {
-      'not-allowed': 'Mikrofon-Zugriff verweigert – bitte in Browser-Einstellungen erlauben',
-      'network': 'Kein Internet – Speech API benötigt Verbindung',
-      'no-speech': 'Keine Sprache erkannt – nochmal versuchen',
-      'service-not-allowed': 'Speech Service nicht verfügbar (nur HTTPS oder localhost)',
-      'audio-capture': 'Kein Mikrofon gefunden',
+      'not-allowed':         'Mikrofon-Zugriff verweigert – in Browser-Einstellungen erlauben',
+      'network':             'Kein Internet – Speech API benötigt Verbindung',
+      'service-not-allowed': 'Speech API nur über localhost oder HTTPS verfügbar',
+      'audio-capture':       'Kein Mikrofon gefunden',
+      'aborted':             '',
     };
-    toast(msgs[ev.error] || `Fehler: ${ev.error}`);
+    const msg = msgs[ev.error];
+    if (msg) toast(msg);
     stopVoice();
   };
+  _voiceRecog.onend = () => {
+    if (_voiceActive) { try { _voiceRecog.start(); } catch(e) { stopVoice(); } }
+    else { _setVoiceBtn(false); }
+  };
   _voiceRecog.start();
-  _voiceActive = true;
-  const vb = document.getElementById('autoVoiceBtn');
-  if (vb) { vb.textContent='[mic]'; vb.style.background='rgba(176,125,158,.2)'; }
 }
+
+async function toggleVoice() {
+  if (_voiceActive) { stopVoice(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Spracherkennung nur in Chrome/Edge verfügbar'); return; }
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    toast('⚠ Speech API funktioniert nur auf localhost oder HTTPS – nicht via Tailscale-IP');
+    return;
+  }
+  // getUserMedia first: activates mic, requests permission, shows which device is used
+  try {
+    _setVoiceBtn(true, '🎤 ...');
+    _voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const track = _voiceStream.getAudioTracks()[0];
+    const label = track?.label || 'Unbekannt';
+    _setVoiceBtn(true, '⏹ Stopp');
+    toast('🎤 Mikrofon: ' + label);
+    // Check if it's the right device
+    if (label && !/audeze|maxwell/i.test(label) && label !== 'Unbekannt') {
+      toast('⚠ Nicht Audeze Maxwell – in Windows als Standard-Aufnahmegerät setzen');
+    }
+    _startLevelMeter(_voiceStream);
+  } catch(e) {
+    toast('Mikrofon-Zugriff verweigert: ' + e.message);
+    _setVoiceBtn(false);
+    return;
+  }
+  _voiceActive = true;
+  _startRecog();
+}
+
 function stopVoice() {
   _voiceActive = false;
+  if (_voiceAnimId) { cancelAnimationFrame(_voiceAnimId); _voiceAnimId = null; }
+  if (_voiceStream) { _voiceStream.getTracks().forEach(t => t.stop()); _voiceStream = null; }
   try { _voiceRecog?.stop(); } catch(e) {}
-  const vb = document.getElementById('autoVoiceBtn');
-  if (vb) { vb.textContent='[mic]'; vb.style.background='rgba(176,125,158,.12)'; }
+  _voiceRecog = null;
+  _setVoiceBtn(false);
+  const bar = document.getElementById('autoVoiceLevel');
+  if (bar) bar.style.width = '0';
 }
 
 function copyLetter() {
@@ -2066,10 +2211,14 @@ init();
       <button onclick="autoClose()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:6px;padding:13px;color:var(--mu2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">Schließen</button>
     </div>
     <!-- Anweisung an Bot -->
-    <div style="display:flex;gap:6px;margin-bottom:10px">
+    <div style="display:flex;gap:6px;margin-bottom:4px">
       <input id="autoInstructInput" type="text" placeholder="Anweisung an Bot… z.B. 'Klick auf Bewerben'" onkeydown="if(event.key==='Enter')sendInstruct()" style="flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:10px 13px;color:var(--tx);font-size:12px;font-family:'DM Mono',monospace;outline:none"/>
       <button onclick="sendInstruct()" style="background:rgba(212,132,90,.15);border:1px solid rgba(212,132,90,.3);border-radius:6px;padding:10px 14px;color:var(--a);font-size:13px;cursor:pointer;white-space:nowrap">&rarr;</button>
-      <button id="autoVoiceBtn" onclick="toggleVoice()" style="background:rgba(176,125,158,.12);border:1px solid rgba(176,125,158,.25);border-radius:6px;padding:10px 13px;font-size:12px;cursor:pointer;color:var(--a4);font-family:'DM Mono',monospace">Stimme</button>
+      <button id="autoVoiceBtn" onclick="toggleVoice()" style="background:rgba(176,125,158,.12);border:1px solid rgba(176,125,158,.25);border-radius:6px;padding:10px 13px;font-size:12px;cursor:pointer;color:var(--a4);font-family:'DM Mono',monospace">🎤 Mic</button>
+    </div>
+    <!-- Mic level meter -->
+    <div id="autoVoiceMeter" style="height:3px;background:var(--s2);border-radius:2px;margin-bottom:8px;overflow:hidden">
+      <div id="autoVoiceLevel" style="height:100%;width:0;background:var(--a4);border-radius:2px;transition:width .08s"></div>
     </div>
     <!-- Anschreiben-Panel -->
     <div id="autoLetterPanel" style="display:none;background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;overflow:hidden">
