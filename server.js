@@ -1098,7 +1098,7 @@ IMPORTANT: Use EXACT text from PAGE CONTENT for target field.
 /no_think`;
 
       // think:false = qwen3 darf NICHT intern denken – sonst verbraucht es alle 600 Tokens für <think> und gibt kein JSON aus
-      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600, null, { think: false });
+      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600, null, true);
       const jsonText = jsonRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       console.log('[VisionAI] Entscheidung:', jsonText.slice(0,200));
       const m = jsonText.match(/\{[\s\S]*?\}/);
@@ -2015,7 +2015,7 @@ async function callAnthropic(messages, maxTokens=1000, label='callAnthropic', mo
   return d.content?.map(b => b.text||'').join('') || '';
 }
 
-async function callOllama(messages, maxTokens=1000, modelOverride=null, extraBody={}) {
+async function callOllama(messages, maxTokens=1000, modelOverride=null, noThink=false) {
   // Flatten any multipart messages (PDFs not supported in Ollama – text only)
   const flatMessages = messages.map(m => ({
     role: m.role,
@@ -2036,8 +2036,8 @@ async function callOllama(messages, maxTokens=1000, modelOverride=null, extraBod
       model,
       messages: flatMessages,
       stream: false,
+      ...(noThink ? { think: false } : {}),
       options: { num_predict: maxTokens, temperature: 0.75 },
-      ...extraBody,
     }),
   });
   const d = JSON.parse(res.body);
@@ -2086,17 +2086,15 @@ async function checkOllamaStatus() {
   }
 }
 
-async function generateCoverLetter(job, profile, lang, feedback=null) {
+async function generateCoverLetter(job, profile, lang, feedback='') {
   if (!lang) lang = detectLanguage((job.title||'')+' '+(job.desc||''));
   const eduDE = [
     profile.bachelorFach ? `Studiengang: ${profile.bachelorFach}` : '',
-    profile.bachelorNote ? `Note: ${profile.bachelorNote}` : '',
     profile.hochschule   ? `Hochschule: ${profile.hochschule}` : '',
     profile.abschlussjahr? `Abschluss: ${profile.abschlussjahr} (ABGESCHLOSSEN – Bewerber hat den Abschluss bereits)` : '',
   ].filter(Boolean).join(', ');
   const eduEN = [
     profile.bachelorFach ? `Degree: ${profile.bachelorFach}` : '',
-    profile.bachelorNote ? `Grade: ${profile.bachelorNote}` : '',
     profile.hochschule   ? `University: ${profile.hochschule}` : '',
     profile.abschlussjahr? `Graduated: ${profile.abschlussjahr} (COMPLETED – degree already obtained)` : '',
   ].filter(Boolean).join(', ');
@@ -2109,78 +2107,90 @@ async function generateCoverLetter(job, profile, lang, feedback=null) {
   const cvProjectsStr = (profile.cvProjects||[]).length ? (profile.cvProjects||[]).map(p2 => typeof p2==='object' ? `${p2.name||p2.title||''}: ${p2.description||p2.desc||''}`.trim() : p2).filter(Boolean).slice(0,5).join(' | ') : '';
   let prompt;
   if (lang === 'en') {
-    prompt = `Write a professional job application cover letter. IMPORTANT: human, personal, direct tone. No AI clichï¿½s like "I am excited to apply" or "I am writing to express my interest". Modern, authentic, concise.
+    prompt = `You are a professional job application writer. Write a cover letter for the following position.
 
-Position: ${job.title} at ${job.company}
+RULES (follow strictly):
+- Tone: direct, confident, human. NOT corporate, NOT generic.
+- FORBIDDEN phrases: "I am excited to apply", "I am writing to express my interest", "I would love to", "I am passionate about", "a dynamic team", "fast-paced environment"
+- NO markdown, NO asterisks (*), NO bold (**), NO bullet points, NO headings
+- NO em dash (—), NO en dash (–) — use comma or period instead
+- Length: exactly 3 paragraphs of body text, ~220-250 words total (not counting subject line)
+- Start each paragraph on a new line, between greeting, name and last paragraph 2 new lines
+
+POSITION:
+Title: ${job.title}
+Company: ${job.company}
 Location: ${job.location}
-Description: ${job.desc}
-Keywords: ${(job.keywords||[]).join(', ')}
+Job description: ${(job.desc||'').slice(0,800)}
+Keywords to include naturally: ${(job.keywords||[]).slice(0,5).join(', ')}
 
-Applicant:
+APPLICANT:
 Name: ${profile.name||'Applicant'}
-Skills: ${profile.skills||'Software Development'}${cvSkillsStr ? '\nCV Skills: '+cvSkillsStr : ''}
-Experience: ${profile.experience||'Career changer'}
+Skills: ${profile.skills||'Software Development'}
+Experience: ${profile.experience||''}
 ${eduEN ? 'Education: '+eduEN : ''}
 ${cvProjectsStr ? 'Projects (from CV): '+cvProjectsStr : ''}
 ${profile.languages ? 'Languages: '+profile.languages : ''}
-${profile.bio?'About me: '+profile.bio:''}
+${profile.bio ? 'Background: '+profile.bio : ''}
+${(profile.cvProjects||[]).length ? 'Relevant projects (mention 1–2 if they fit the role, briefly and naturally): '+(profile.cvProjects||[]).join(' | ') : ''}
 
-FORMAT ï¿½ output exactly in this order, nothing else and make line 1 bold:
-Line 1: "Re: Application ï¿½ ${job.title}" (or a natural English subject line variation)
-Line 2: (blank)
-Line 3+: Body text starting with salutation like "Dear Hiring Team," or "Hello,"
+OUTPUT FORMAT (output only this, nothing before, nothing after):
+Line 1: Subject line like "Application – ${job.title}"
+Line 2: blank
+Line 3: Salutation like "Hello," or "Dear Hiring Team,"
+Line 4: blank
+Lines 5+: Three paragraphs separated by blank lines
+Last line: "Best regards," then next line the applicant name${feedback ? `\n\nSPECIAL INSTRUCTION FOR THIS VERSION: ${feedback}` : ''}`;
 
-~270 words total (subject not counted). Naturally include keywords: ${(job.keywords||[]).slice(0,3).join(', ')}. NO headings, NO markdown, NO asterisks, NO ** markers, NO em dashes (ï¿½), NO en dashes (ï¿½).${feedback ? `\n\nFEEDBACK ON LAST VERSION – please apply specifically: ${feedback}` : ''}`;
   } else {
-    prompt = `Du bist ein deutschsprachiger Bewerbungsexperte. Schreibe ein Anschreiben, das sich anfühlt als hätte es ein Mensch auf Deutsch geschrieben – nicht als wäre es aus dem Englischen übersetzt.
+    prompt = `Du bist ein professioneller Bewerbungsschreiber. Schreibe ein Anschreiben für folgende Stelle.
 
-VERBOTEN (typische Übersetzungs-Floskeln aus dem Englischen):
-- "Ich schreibe dir/Ihnen, weil..." (= "I am writing to you because")
-- "Ich bewerbe mich hiermit" / "Mit großem Interesse bewerbe ich mich"
-- "Ich bin begeistert von der Möglichkeit" (= "I am excited about the opportunity")
-- "Ich glaube, dass ich ein guter Kandidat bin" (= "I believe I would be a great fit")
-- Jeder Einstieg der auf Englisch "I am writing to..." entspricht
-${graduationHint}
+REGELN (strikt einhalten):
+- Ton: direkt, selbstbewusst, authentisch. NICHT formelhaft, NICHT generisch, KEINE Übersetzung aus dem Englischen.
+- Sprache: natürliches, fehlerfreies Hochdeutsch. Korrekte Grammatik und Zeitformen (z.B. "Ich habe entwickelt" nicht "ich entwickeln").
+- VERBOTENE Formulierungen: "Zu Ihrer Stelle bin ich sehr interessiert", "bin ich sehr interessiert", "Mit großem Interesse", "hiermit bewerbe ich mich", "ich bewerbe mich hiermit", "hochmotiviert", "dynamisches Team", "spannende Herausforderung", "ich freue mich darauf", "mit freundlichen Grüßen möchte ich", "bin ich qualifiziert", "zu qualifizieren"
+- GUTE Einstiegssätze: direkt mit einer konkreten Aussage beginnen, z.B. "React, TypeScript und NestJS – genau das bringe ich mit für die Stelle als...", oder "Als Fullstack-Entwickler mit Erfahrung in ... passe ich gut zur Stelle bei ..."
+- KEIN Markdown, KEINE Sternchen (*), KEIN Fettdruck (**), KEINE Aufzählungspunkte, KEINE Überschriften
+- KEIN Em-Dash (—), KEIN En-Dash (–), stattdessen Komma oder Punkt
+- Länge: genau 3 Absätze Brieftext, ca. 200-230 Wörter gesamt (Betreff nicht mitgezählt)
+- Absätze durch Leerzeile trennen, zwischen gruß, name und letztem Absatz immer zwei Leerzeilen
+- Schreibe aus der Ich-Perspektive des Bewerbers
 
-STATTDESSEN – so klingt echtes Deutsch:
-- Direkt mit dem Inhalt einsteigen: "Was mich an ${job.company} reizt: ..."
-- Oder eine konkrete Verbindung zur Stelle: "${job.title} – genau das, womit ich mich seit Jahren beschäftige."
-- Oder eine direkte Aussage: "Fullstack, TypeScript, und ein Team das liefert – das kenne ich, das suche ich."
-- Der erste Satz darf ruhig unkonventionell sein, solange er echt klingt.
-
-Stelle: ${job.title} bei ${job.company}
+STELLE:
+Titel: ${job.title}
+Unternehmen: ${job.company}
 Ort: ${job.location}
-Beschreibung: ${job.desc}
-Keywords: ${(job.keywords||[]).join(', ')}
+Stellenbeschreibung: ${(job.desc||'').slice(0,800)}
+Keywords natürlich einbauen: ${(job.keywords||[]).slice(0,5).join(', ')}
 
-Bewerber:
+BEWERBER:
 Name: ${profile.name||'Bewerber'}
-Skills: ${profile.skills||'Softwareentwicklung'}${cvSkillsStr ? '\nCV-Skills: '+cvSkillsStr : ''}
-Erfahrung: ${profile.experience||'Quereinsteiger'}
+Skills: ${profile.skills||'Softwareentwicklung'}
+Erfahrung: ${profile.experience||''}
 ${eduDE ? 'Ausbildung: '+eduDE : ''}
 ${cvProjectsStr ? 'Projekte (aus CV): '+cvProjectsStr : ''}
 ${profile.languages ? 'Sprachen: '+profile.languages : ''}
-${profile.bio?'Über mich: '+profile.bio:''}
+${profile.bio ? 'Über mich: '+profile.bio : ''}
+${(profile.cvProjects||[]).length ? 'Eigene Projekte (1–2 erwähnen falls zur Stelle passend, kurz und natürlich eingebaut): '+(profile.cvProjects||[]).join(' | ') : ''}
 
-FORMAT – gib genau das aus, nichts anderes, und mache Zeile 1 bold:
-Zeile 1: "Bewerbung als ${job.title}" (oder eine natürliche Betreff-Variation)
-Zeile 2: (leer)
-Zeile 3+: Brieftext beginnend mit Anrede wie "Hallo," oder "Sehr geehrte Damen und Herren,"
+AUSGABEFORMAT (nur das ausgeben, nichts davor, nichts danach):
+Zeile 1: Betreff wie "Bewerbung als ${job.title}"
+Zeile 2: leer
+Zeile 3: Anrede wie "Hallo," oder "Sehr geehrte Damen und Herren,"
+Zeile 4: leer
+Zeilen 5+: Drei Absätze, durch Leerzeile getrennt
+Letzte Zeile: "Mit freundlichen Grüßen," dann nächste Zeile der Name des Bewerbers${feedback ? `
 
-~270 Wörter (Betreff nicht mitgezählt). Keywords ${(job.keywords||[]).slice(0,3).join(', ')} natürlich einbauen. KEINE Überschriften, KEIN Markdown, KEINE Sternchen, KEINE ** Zeichen, KEINE Em-Dashes, KEINE En-Dashes.${feedback ? `\n\nFEEDBACK ZUR LETZTEN VERSION – bitte gezielt umsetzen: ${feedback}` : ''}`;
+BESONDERE ANWEISUNG FÜR DIESE VERSION: ${feedback}` : ''}`;
   }
-  let raw;
-  if (CONFIG.AI_MODE === 'ollama') {
-    // think:false – Ollama mit think:true verbraucht alle num_predict-Tokens für Thinking und liefert leeren content zurück.
-    // Qualität ist für strukturierte Aufgaben (Anschreiben nach Vorlage) mit think:false ausreichend.
-    const ollamaRaw = await callOllama([{ role: 'user', content: prompt }], 1200, CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL, { think: false });
-    // Strip any <think> blocks that slipped through anyway (older Ollama versions inline-thinking)
-    raw = ollamaRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim() || ollamaRaw.trim();
-  } else {
-    raw = await callAnthropic([{ role: 'user', content: prompt }], 1200, 'Anschreiben', MODELS.coverLetter);
-  }
-  // Strip any markdown bold/italic markers and em dashes the AI added despite instructions
-  return raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').replace(/\u2014/g, '-').replace(/\u2013/g, '-').trim();
+  const sysLang = lang === 'en'
+    ? 'You are a professional cover letter writer. You write only in English. Output plain text only, no markdown.'
+    : 'Du bist ein professioneller Bewerbungsschreiber. Du schreibst ausschließlich auf natürlichem, fehlerfreiem Hochdeutsch. Niemals auf Englisch, niemals übersetzte Phrasen. Nur Klartext, kein Markdown.';
+  const raw = CONFIG.AI_MODE === 'ollama'
+    ? (await callOllama([{ role: 'system', content: sysLang }, { role: 'user', content: prompt }], 1500, CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL, true)).replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+    : await callAnthropic([{ role: 'user', content: prompt }], 1500, 'Anschreiben', MODELS.coverLetter);
+  // Strip any markdown bold/italic markers and dashes the AI added despite instructions
+  return raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').replace(/\u2014/g, ',').replace(/\u2013/g, ',').trim();
 }
 
 // Detect language from job text (simple word-frequency approach)
@@ -2303,6 +2313,26 @@ async function applyJob(jobId) {
 // Extract readable text from a base64-encoded PDF without external dependencies.
 // Works for text-based PDFs (not scanned images). Uses built-in zlib for
 // FlateDecode streams, then pulls text from BT...ET PDF operator blocks.
+function ascii85Decode(buf) {
+  // ASCII85 (base85) decoder. Input ends with ~>
+  let str = buf.toString('ascii').replace(/\s/g, '');
+  if (str.endsWith('~>')) str = str.slice(0, -2);
+  const out = [];
+  let i = 0;
+  while (i < str.length) {
+    if (str[i] === 'z') { out.push(0,0,0,0); i++; continue; }
+    const chunk = str.slice(i, i+5);
+    i += 5;
+    let val = 0;
+    for (let j = 0; j < 5; j++) {
+      val = val * 85 + ((chunk.charCodeAt(j) || 117) - 33);
+    }
+    const len = Math.min(4, chunk.length - 1);
+    for (let b = 3; b >= 4 - len; b--) out.push((val >>> (b * 8)) & 0xff);
+  }
+  return Buffer.from(out);
+}
+
 function extractPdfText(base64) {
   // Cap input: a 3 MB binary is more than enough for any CV
   const buf = Buffer.from(base64.slice(0, 4 * 1024 * 1024), 'base64');
@@ -2317,7 +2347,12 @@ function extractPdfText(base64) {
     const dictStart = raw.lastIndexOf('<<', dictEnd);
     const dict = dictStart >= 0 ? raw.slice(dictStart, dictEnd) : '';
     const isFlate = /FlateDecode|\bFl\b/.test(dict);
-    const data = Buffer.from(sm[1], 'binary');
+    const isA85 = /ASCII85Decode|A85/.test(dict);
+    let data = Buffer.from(sm[1], 'binary');
+    // Apply filters in order (PDF spec: filters applied in array order, decode in reverse)
+    if (isA85) {
+      try { data = ascii85Decode(data); } catch(e) {}
+    }
     if (isFlate) {
       for (const inflate of [zlib.inflateSync, zlib.inflateRawSync]) {
         try { allText += inflate(data).toString('latin1') + '\n'; break; } catch(e) {}
@@ -2362,16 +2397,17 @@ async function analyzeCV(base64) {
     if (!pdfText || pdfText.trim().length < 60) {
       throw new Error('PDF-Text konnte nicht extrahiert werden (ggf. gescanntes PDF). Bitte Skills manuell eintragen.');
     }
-    const prompt = `Analysiere den folgenden Lebenslauf-Text und extrahiere ALLE Skills – auch implizite aus Berufserfahrung, Projekten und Studium.\n\nLebenslauf:\n${pdfText.slice(0, 6000)}\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"experience_summary":""}`;
-    // 3-minute timeout for CV analysis (model may need to load first)
-    const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Zeitüberschreitung nach 3 Minuten. Ollama läuft möglicherweise noch (Modell wird geladen) – bitte erneut versuchen.')),180000));
-    const cvRaw = await Promise.race([callOllama([{ role: 'user', content: prompt }], 800), timeoutPromise]);
+    const prompt = `Analysiere den folgenden Lebenslauf-Text und extrahiere ALLE Skills sowie Projekte.\n\nLebenslauf:\n${pdfText.slice(0, 6000)}\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"projects":[],"experience_summary":""}\n\nFür "projects": Liste jedes relevante Projekt als kurzen String, z.B. "JobHunter AI – Node.js, Puppeteer, SQLite" oder "E-Learning Portal – React, TypeScript, REST API". Max 6 Projekte.`;
+    // Use letter model (smaller/faster) for JSON extraction, fall back to main model
+    const model = CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL;
+    const timeoutPromise = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Zeitüberschreitung nach 5 Minuten. Ollama läuft möglicherweise noch (Modell wird geladen) – bitte erneut versuchen.')),300000));
+    const cvRaw = await Promise.race([callOllama([{ role: 'user', content: prompt }], 1500, model, true), timeoutPromise]);
     return cvRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   }
   return callAnthropic([{role:'user',content:[
     {type:'document',source:{type:'base64',media_type:'application/pdf',data:base64}},
-    {type:'text',text:'Analysiere diesen Lebenslauf. Extrahiere ALLE Skills ï¿½ auch implizite aus Jobs, Projekten, Studium.\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"experience_summary":""}'}
-  ]}],800,'CV-Analyse',MODELS.cvAnalysis);
+    {type:'text',text:'Analysiere diesen Lebenslauf. Extrahiere ALLE Skills sowie Projekte (auch implizite).\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"projects":[],"experience_summary":""}\n\nFür "projects": je ein kurzer String pro Projekt, z.B. "JobHunter AI – Node.js, SQLite". Max 6 Projekte.'}
+  ]}],1200,'CV-Analyse',MODELS.cvAnalysis);
 }
 
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,PUT,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
@@ -2483,16 +2519,16 @@ const server=http.createServer(async(req,res)=>{
     } catch(e) { return sendJSON(res,{error:e.message},500); }
   }
   if (pathname==='/api/coverletter'&&req.method==='POST') {
-    const {job, feedback, nocache}=await readBody(req);
+    const {job, force, feedback}=await readBody(req);
     try{
       const lang=detectLanguage((job.title||'')+' '+(job.desc||''));
-      // Return cached letter only on first load (not when explicitly regenerating)
-      if (job.id && !feedback && !nocache) {
+      // Return cached letter if available (skip if force=true)
+      if (!force && job.id) {
         const cached = db.prepare('SELECT letter FROM jobs WHERE id=?').get(job.id);
         if (cached?.letter) return sendJSON(res,{letter:cached.letter,lang,cached:true});
       }
-      const letter = await generateCoverLetter(job,loadProfile(),lang,feedback||null);
-      // Always update cache with latest generated letter
+      const letter = await generateCoverLetter(job,loadProfile(),lang,feedback||'');
+      // Cache for next time
       if (job.id) { try { db.prepare('UPDATE jobs SET letter=? WHERE id=?').run(letter, job.id); } catch(e) {} }
       return sendJSON(res,{letter,lang});
     }
@@ -2517,6 +2553,107 @@ const server=http.createServer(async(req,res)=>{
     const {base64}=await readBody(req);
     try{const raw=await analyzeCV(base64);return sendJSON(res,{raw});}
     catch(e){return sendJSON(res,{error:e.message},500);}
+  }
+
+  // -- CV ANALYSE STREAMING (SSE) ----------------------------------------
+  if (pathname==='/api/analyze-cv-stream'&&req.method==='POST') {
+    const {base64}=await readBody(req);
+    res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','Access-Control-Allow-Origin':'*'});
+    const sse = (data) => { try { res.write(`data: ${JSON.stringify(data)}\n\n`); } catch(e){} };
+
+    if (CONFIG.AI_MODE !== 'ollama') {
+      // For Anthropic just run normally
+      sse({step:'model', msg:'Claude API – analysiere...'});
+      try {
+        const raw = await analyzeCV(base64);
+        sse({step:'done', raw});
+      } catch(e) { sse({step:'error', msg:e.message}); }
+      return res.end();
+    }
+
+    // --- Ollama streaming path ---
+    sse({step:'extract', msg:'Lese PDF-Text...'});
+    let pdfText;
+    try {
+      pdfText = extractPdfText(base64);
+    } catch(e) { sse({step:'error', msg:'PDF-Fehler: '+e.message}); return res.end(); }
+    if (!pdfText || pdfText.trim().length < 60) {
+      sse({step:'error', msg:'PDF-Text konnte nicht extrahiert werden (ggf. gescanntes PDF). Bitte Skills manuell eintragen.'});
+      return res.end();
+    }
+    sse({step:'extract', msg:`PDF gelesen · ${pdfText.trim().split(/\s+/).length} Wörter erkannt`});
+
+    const model = CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL;
+    sse({step:'model', msg:`Modell: ${model} – warte auf Ollama...`});
+
+    // Check Ollama reachable
+    try { await fetchUrl(`${CONFIG.OLLAMA_URL}/api/tags`, {timeout:4000}); }
+    catch(e) { sse({step:'error', msg:`Ollama nicht erreichbar (${CONFIG.OLLAMA_URL}). Bitte starten.`}); return res.end(); }
+
+    const prompt = `Analysiere den folgenden Lebenslauf-Text und extrahiere ALLE Skills sowie Projekte.\n\nLebenslauf:\n${pdfText.slice(0,6000)}\n\nAntworte NUR mit JSON, kein Markdown:\n{"technical":[],"languages":[],"tools":[],"soft":[],"domains":[],"projects":[],"experience_summary":""}\n\nFür "projects": Liste jedes relevante Projekt als kurzen String, z.B. "JobHunter AI – Node.js, SQLite". Max 6 Projekte.`;
+
+    // Stream Ollama response token by token
+    const ollamaUrl = new URL(`${CONFIG.OLLAMA_URL}/api/chat`);
+    const flatMsg = [{role:'user',content:prompt}];
+    let fullContent = '';
+    let tokenCount = 0;
+    let lastStatusAt = 0;
+    const startTs = Date.now();
+
+    await new Promise((resolve) => {
+      const ollamaReq = http.request({
+        hostname: ollamaUrl.hostname,
+        port: parseInt(ollamaUrl.port)||11434,
+        path: '/api/chat',
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        timeout: 300000,
+      }, (ollamaRes) => {
+        let buf = '';
+        ollamaRes.on('data', chunk => {
+          buf += chunk.toString();
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            try {
+              const d = JSON.parse(trimmed);
+              const token = d.message?.content || '';
+              fullContent += token;
+              tokenCount++;
+              const now = Date.now();
+              // Send update every 15 tokens or every 2 seconds
+              if (tokenCount - lastStatusAt >= 15 || now - startTs > (Math.floor((now-startTs)/2000)*2000)) {
+                lastStatusAt = tokenCount;
+                const elapsed = Math.round((now-startTs)/1000);
+                // Count how many JSON fields look filled in
+                const skillsFound = (fullContent.match(/"[^"]{2,30}"/g)||[]).length;
+                sse({step:'generating', msg:`Analysiere... (${tokenCount} Tokens, ${elapsed}s) · ~${Math.max(0,skillsFound-10)} Skills erkannt`, tokens:tokenCount, elapsed});
+              }
+              if (d.done) {
+                fullContent = fullContent.replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+                sse({step:'done', raw:fullContent});
+                resolve();
+              }
+            } catch(e) {}
+          }
+        });
+        ollamaRes.on('end', () => resolve());
+        ollamaRes.on('error', (e) => { sse({step:'error', msg:'Stream-Fehler: '+e.message}); resolve(); });
+      });
+      ollamaReq.on('error', (e) => { sse({step:'error', msg:'Ollama-Fehler: '+e.message}); resolve(); });
+      ollamaReq.on('timeout', () => { ollamaReq.destroy(); sse({step:'error', msg:'Zeitüberschreitung – Ollama antwortet nicht'}); resolve(); });
+      ollamaReq.write(JSON.stringify({
+        model,
+        messages: flatMsg,
+        stream: true,
+        think: false,
+        options: {num_predict:1500, temperature:0.3},
+      }));
+      ollamaReq.end();
+    });
+    return res.end();
   }
   if (pathname==='/api/profile') {
     if (req.method==='GET') return sendJSON(res,loadProfile());
@@ -2561,6 +2698,63 @@ const server=http.createServer(async(req,res)=>{
   if (pathname==='/api/ollama-status'&&req.method==='GET') {
     const status=await checkOllamaStatus();
     return sendJSON(res,{...status, currentModel:CONFIG.OLLAMA_MODEL, aiMode:CONFIG.AI_MODE});
+  }
+
+  // -- OLLAMA PULL (SSE stream) ------------------------------------------
+  if (pathname==='/api/ollama-pull'&&req.method==='POST') {
+    const { model } = await readBody(req);
+    if (!model || typeof model !== 'string' || !/^[\w.\-:\/]+$/.test(model)) {
+      return sendJSON(res, { error: 'Ungültiger Modellname' }, 400);
+    }
+    // Set up SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+    const send = (data) => { try { res.write(`data: ${JSON.stringify(data)}\n\n`); } catch(e){} };
+    send({ status: 'starting', message: `Lade ${model} herunter...` });
+    // Stream the pull from Ollama
+    const ollamaUrl = new URL(`${CONFIG.OLLAMA_URL}/api/pull`);
+    const pullReq = http.request({
+      hostname: ollamaUrl.hostname,
+      port: parseInt(ollamaUrl.port) || 11434,
+      path: '/api/pull',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }, (pullRes) => {
+      let buf = '';
+      pullRes.on('data', chunk => {
+        buf += chunk.toString();
+        const lines = buf.split('\n');
+        buf = lines.pop(); // keep incomplete line
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            const d = JSON.parse(trimmed);
+            if (d.total && d.completed) {
+              const pct = Math.round((d.completed / d.total) * 100);
+              send({ status: 'downloading', message: d.status || 'Downloade...', pct, total: d.total, completed: d.completed });
+            } else if (d.status) {
+              send({ status: d.status === 'success' ? 'success' : 'progress', message: d.status });
+            }
+          } catch(e) {}
+        }
+      });
+      pullRes.on('end', () => {
+        send({ status: 'success', message: `${model} erfolgreich heruntergeladen!` });
+        try { res.end(); } catch(e) {}
+      });
+    });
+    pullReq.on('error', (e) => {
+      send({ status: 'error', message: 'Ollama nicht erreichbar: ' + e.message });
+      try { res.end(); } catch(e2) {}
+    });
+    pullReq.write(JSON.stringify({ name: model, stream: true }));
+    pullReq.end();
+    return; // keep connection open
   }
 
   if (pathname==='/api/test-ollama'&&req.method==='GET') {
@@ -2876,3 +3070,12 @@ server.listen(CONFIG.PORT,'0.0.0.0',()=>{
 });
 server.on('error',e=>{if(e.code==='EADDRINUSE')console.error(`\n? Port ${CONFIG.PORT} belegt.`);else console.error('Fehler:',e.message);process.exit(1);});
 
+// Prevent server crash from unhandled promise rejections / exceptions in scan/scraper code
+process.on('uncaughtException', (err) => {
+  console.error('[!] Uncaught Exception (Server läuft weiter):', err.message);
+  console.error(err.stack ? err.stack.split('\n').slice(0,5).join('\n') : '');
+});
+process.on('unhandledRejection', (reason) => {
+  const msg = reason instanceof Error ? reason.message : String(reason);
+  console.error('[!] Unhandled Rejection (Server läuft weiter):', msg);
+});
