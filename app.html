@@ -1176,7 +1176,7 @@ function renderProjects() {
   if (!cvProjects.size) { container.innerHTML=''; if(ph){ph.style.display='';container.appendChild(ph);} return; }
   if (ph) ph.style.display='none';
   container.innerHTML = [...cvProjects].map(p => {
-    const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/'/g,"&#39;");
+    const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#39;");
     const safeJs = p.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(78,120,48,.12);border:1px solid rgba(78,120,48,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--a3);cursor:pointer;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safe}" onclick="removeProject('${safeJs}')">📁 ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
   }).join('');
@@ -1187,12 +1187,13 @@ function setCvLabelLoaded(filename) {
   currentCVFile = filename;
   const dlUrl = `${BASE}/uploads/${encodeURIComponent(filename)}${authToken?'?token='+encodeURIComponent(authToken):''}`;
   const safeJs = filename.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   document.getElementById('cvLabel').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">📄</div><div style="flex:1;min-width:0;text-align:left"><div style="color:var(--a);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHtml}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div></div><a href="${dlUrl}" download="${safeHtml}" onclick="event.stopPropagation()" style="background:rgba(78,120,48,.1);border:1px solid rgba(78,120,48,.25);border-radius:6px;padding:5px 9px;color:var(--a3);font-size:11px;text-decoration:none;flex-shrink:0;line-height:1">⬇</a><button onclick="event.stopPropagation();removeCV('${safeJs}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 9px;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1">✕</button></div>`;
 }
 
 async function removeCV(filename) {
-  if (!confirm(`Lebenslauf "${filename}" entfernen?`)) return;
+  const safeNameForConfirm = String(filename || '').replace(/["\r\n]/g, ' ');
+  if (!confirm(`Lebenslauf "${safeNameForConfirm}" entfernen?`)) return;
   await api('/api/files/'+encodeURIComponent(filename),'DELETE',null).catch(()=>{});
   currentCVFile = '';
   document.getElementById('cvLabel').innerHTML = `<div style="font-size:24px;margin-bottom:4px">📄</div><div>PDF hochladen</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills &amp; Projekte werden automatisch erkannt</div>`;
@@ -1666,7 +1667,7 @@ async function pullOllamaModel() {
             msg.textContent = `Lade ${model}...`;
           } else if (d.status === 'success') {
             barFill.style.width = '100%';
-            msg.innerHTML = `<span style="color:var(--a3)">✓ ${model} erfolgreich installiert!</span>`;
+            msg.innerHTML = `<span style="color:var(--a3)">✓ ${escapeHtml(String(model||''))} erfolgreich installiert!</span>`;
             detail.textContent = '';
             btn.textContent = '✓ Fertig';
             _installedModels.push(model);
@@ -1675,17 +1676,17 @@ async function pullOllamaModel() {
             api('/api/config','POST',{[configKey]: model}).catch(()=>{});
             setTimeout(() => { banner.style.display = 'none'; loadOllamaStatus(); }, 2500);
           } else if (d.status === 'error') {
-            msg.innerHTML = `<span style="color:#f87171">✗ Fehler: ${d.message}</span>`;
+            msg.innerHTML = `<span style="color:#f87171">✗ Fehler: ${escapeHtml(String(d.message||''))}</span>`;
             btn.disabled = false; btn.textContent = '↓ Erneut versuchen';
             detail.textContent = '';
           } else if (d.message) {
             detail.textContent = d.message;
           }
-        } catch(e) {}
+        } catch(e) { console.debug('[pull-ollama-model] invalid stream chunk', e); }
       }
     }
   } catch(e) {
-    msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+    msg.innerHTML = `<span style="color:#f87171">✗ ${escapeHtml(String(e.message||''))}</span>`;
     btn.disabled = false; btn.textContent = '↓ Erneut versuchen';
   }
 }
@@ -1779,25 +1780,30 @@ async function testOllama() {
       res.style.background = 'rgba(52,211,153,.1)';
       res.style.border = '1px solid rgba(52,211,153,.2)';
       res.style.color = 'var(--a)';
+      const safeVisionModel = escapeHtml(String(d.visionModel || ''));
       const visionLine = d.visionAvailable
-        ? `<br/> Vision: <strong>${d.visionModel}</strong> verfügbar`
-        : `<br/> Vision: <strong>${d.visionModel}</strong> <span style="opacity:.7">(nicht installiert · <code>ollama pull ${d.visionModel}</code>)</span>`;
+        ? `<br/> Vision: <strong>${safeVisionModel}</strong> verfügbar`
+        : `<br/> Vision: <strong>${safeVisionModel}</strong> <span style="opacity:.7">(nicht installiert · <code>ollama pull ${safeVisionModel}</code>)</span>`;
       const _lm = ollamaLetterModel || ollamaModel;
       const letterAvail = !d.models?.length || d.models.some(m=>m===_lm||m.startsWith(_lm.split(':')[0]));
-      const letterLine = `<br/>${letterAvail?'✅':'⚠'} Brief: <strong>${_lm}</strong>${letterAvail?'':' <span style="opacity:.7">(nicht installiert)</span>'}`;
-      res.innerHTML = `✅ Ollama antwortet · Text: <strong>${d.model}</strong><br/>Antwort: "${d.reply}"${visionLine}${letterLine}${d.models?.length?'<br/><span style="opacity:.65">Installiert: '+d.models.join(', ')+'</span>':''}`;
+      const safeLetterModel = escapeHtml(String(_lm || ''));
+      const safeModel = escapeHtml(String(d.model || ''));
+      const safeReply = escapeHtml(String(d.reply || ''));
+      const safeInstalled = d.models?.length ? d.models.map(m => escapeHtml(String(m))).join(', ') : '';
+      const letterLine = `<br/>${letterAvail?'✅':'⚠'} Brief: <strong>${safeLetterModel}</strong>${letterAvail?'':' <span style="opacity:.7">(nicht installiert)</span>'}`;
+      res.innerHTML = `✅ Ollama antwortet · Text: <strong>${safeModel}</strong><br/>Antwort: "${safeReply}"${visionLine}${letterLine}${safeInstalled?'<br/><span style="opacity:.65">Installiert: '+safeInstalled+'</span>':''}`;
     } else {
       res.style.background = 'rgba(248,113,113,.1)';
       res.style.border = '1px solid rgba(248,113,113,.2)';
       res.style.color = 'var(--a3)';
-      res.innerHTML = ` ${d.error}`;
+      res.textContent = ` ${d.error || ''}`;
     }
   } catch(e) {
     res.style.display = 'block';
     res.style.background = 'rgba(248,113,113,.1)';
     res.style.border = '1px solid rgba(248,113,113,.2)';
     res.style.color = 'var(--a3)';
-    res.innerHTML = ` ${e.message}`;
+    res.textContent = ` ${e.message || ''}`;
   }
   btn.disabled = false; btn.textContent = 'Ollama testen';
 }
