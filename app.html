@@ -1192,7 +1192,7 @@ function setCvLabelLoaded(filename) {
 }
 
 async function removeCV(filename) {
-  const safeNameForConfirm = String(filename || '').replace(/["\r\n]/g, ' ');
+  const safeNameForConfirm = String(filename || '').replace(/["'\\\r\n]/g, ' ');
   if (!confirm(`Lebenslauf "${safeNameForConfirm}" entfernen?`)) return;
   await api('/api/files/'+encodeURIComponent(filename),'DELETE',null).catch(()=>{});
   currentCVFile = '';
