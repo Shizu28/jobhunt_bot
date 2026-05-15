@@ -1177,8 +1177,8 @@ function renderProjects() {
   if (ph) ph.style.display='none';
   container.innerHTML = [...cvProjects].map(p => {
     const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#39;");
-    const safeJs = p.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(78,120,48,.12);border:1px solid rgba(78,120,48,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--a3);cursor:pointer;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safe}" onclick="removeProject('${safeJs}')">📁 ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
+    const safeJs = JSON.stringify(p).replace(/"/g, '&quot;');
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(78,120,48,.12);border:1px solid rgba(78,120,48,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--a3);cursor:pointer;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safe}" onclick="removeProject(${safeJs})">📁 ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
   }).join('');
 }
 function removeProject(p){ cvProjects.delete(p); renderProjects(); }
@@ -1186,13 +1186,13 @@ function removeProject(p){ cvProjects.delete(p); renderProjects(); }
 function setCvLabelLoaded(filename) {
   currentCVFile = filename;
   const dlUrl = `${BASE}/uploads/${encodeURIComponent(filename)}${authToken?'?token='+encodeURIComponent(authToken):''}`;
-  const safeJs = filename.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const safeJs = JSON.stringify(filename).replace(/"/g, '&quot;');
   const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  document.getElementById('cvLabel').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">📄</div><div style="flex:1;min-width:0;text-align:left"><div style="color:var(--a);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHtml}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div></div><a href="${dlUrl}" download="${safeHtml}" onclick="event.stopPropagation()" style="background:rgba(78,120,48,.1);border:1px solid rgba(78,120,48,.25);border-radius:6px;padding:5px 9px;color:var(--a3);font-size:11px;text-decoration:none;flex-shrink:0;line-height:1">⬇</a><button onclick="event.stopPropagation();removeCV('${safeJs}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 9px;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1">✕</button></div>`;
+  document.getElementById('cvLabel').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">📄</div><div style="flex:1;min-width:0;text-align:left"><div style="color:var(--a);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHtml}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div></div><a href="${dlUrl}" download="${safeHtml}" onclick="event.stopPropagation()" style="background:rgba(78,120,48,.1);border:1px solid rgba(78,120,48,.25);border-radius:6px;padding:5px 9px;color:var(--a3);font-size:11px;text-decoration:none;flex-shrink:0;line-height:1">⬇</a><button onclick="event.stopPropagation();removeCV(${safeJs})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 9px;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1">✕</button></div>`;
 }
 
 async function removeCV(filename) {
-  const safeNameForConfirm = String(filename || '').replace(/["'\\\r\n]/g, ' ');
+  const safeNameForConfirm = String(filename || '').replace(/["'`\\\r\n]/g, ' ');
   if (!confirm(`Lebenslauf "${safeNameForConfirm}" entfernen?`)) return;
   await api('/api/files/'+encodeURIComponent(filename),'DELETE',null).catch(()=>{});
   currentCVFile = '';
