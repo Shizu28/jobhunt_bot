@@ -192,7 +192,7 @@ function updateJob(id, fields) {
 
 function loadProfile() {
   const rows = db.prepare('SELECT key,value FROM profile').all();
-  const p = { name:'', email:'', phone:'', street:'', zip:'', skills:'', experience:'', bio:'', location:'', languages:'', bachelorFach:'', bachelorNote:'', hochschule:'', abschlussjahr:'', cvSkills:[], want_remote:true, want_local:true, want_car:true, radius_km:10, radius_car_km:50, salary:null, salaryMin:null, salaryMax:null };
+  const p = { name:'', email:'', phone:'', street:'', zip:'', skills:'', experience:'', bio:'', location:'', languages:'', bachelorFach:'', bachelorNote:'', hochschule:'', abschlussjahr:'', cvSkills:[], cvProjects:[], want_remote:true, want_local:true, want_car:true, radius_km:10, radius_car_km:50, salary:null, salaryMin:null, salaryMax:null };
   for (const { key, value } of rows) {
     if (key==='cvSkills' || key==='cvProjects') { try { p[key]=JSON.parse(value); } catch(e) {} }
     else if (['want_remote','want_local','want_car'].includes(key)) p[key] = value==='true';
@@ -1097,8 +1097,8 @@ Output ONLY a JSON object (no markdown, no explanation):
 IMPORTANT: Use EXACT text from PAGE CONTENT for target field.
 /no_think`;
 
-      // qwen3/thinking models output <think>...</think> before JSON — strip it, allow enough tokens
-      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600);
+      // think:false = qwen3 darf NICHT intern denken – sonst verbraucht es alle 600 Tokens für <think> und gibt kein JSON aus
+      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600, null, true);
       const jsonText = jsonRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       console.log('[VisionAI] Entscheidung:', jsonText.slice(0,200));
       const m = jsonText.match(/\{[\s\S]*?\}/);
@@ -2091,13 +2091,20 @@ async function generateCoverLetter(job, profile, lang, feedback='') {
   const eduDE = [
     profile.bachelorFach ? `Studiengang: ${profile.bachelorFach}` : '',
     profile.hochschule   ? `Hochschule: ${profile.hochschule}` : '',
-    profile.abschlussjahr? `Abschluss: ${profile.abschlussjahr}` : '',
+    profile.abschlussjahr? `Abschluss: ${profile.abschlussjahr} (ABGESCHLOSSEN – Bewerber hat den Abschluss bereits)` : '',
   ].filter(Boolean).join(', ');
   const eduEN = [
     profile.bachelorFach ? `Degree: ${profile.bachelorFach}` : '',
     profile.hochschule   ? `University: ${profile.hochschule}` : '',
-    profile.abschlussjahr? `Graduated: ${profile.abschlussjahr}` : '',
+    profile.abschlussjahr? `Graduated: ${profile.abschlussjahr} (COMPLETED – degree already obtained)` : '',
   ].filter(Boolean).join(', ');
+  // IMPORTANT hint for prompt to avoid future-tense graduation mistake
+  const graduationHint = profile.abschlussjahr
+    ? `\nKRITISCH: Der Bewerber hat den Abschluss bereits ${profile.abschlussjahr} abgeschlossen. NIEMALS schreiben „werde abschließen“ oder „werde meinen Abschluss machen“ – immer Vergangenheit/Gegenwart verwenden: „habe abgeschlossen“, „schloß ab“.`
+    : '';
+  // Format CV skills and projects for context
+  const cvSkillsStr = (profile.cvSkills||[]).length ? (profile.cvSkills||[]).map(s => typeof s==='object' ? `${s.name||s.skill||''} (${s.level||s.years||''})`.trim() : s).filter(Boolean).slice(0,20).join(', ') : '';
+  const cvProjectsStr = (profile.cvProjects||[]).length ? (profile.cvProjects||[]).map(p2 => typeof p2==='object' ? `${p2.name||p2.title||''}: ${p2.description||p2.desc||''}`.trim() : p2).filter(Boolean).slice(0,5).join(' | ') : '';
   let prompt;
   if (lang === 'en') {
     prompt = `You are a professional job application writer. Write a cover letter for the following position.
@@ -2122,6 +2129,7 @@ Name: ${profile.name||'Applicant'}
 Skills: ${profile.skills||'Software Development'}
 Experience: ${profile.experience||''}
 ${eduEN ? 'Education: '+eduEN : ''}
+${cvProjectsStr ? 'Projects (from CV): '+cvProjectsStr : ''}
 ${profile.languages ? 'Languages: '+profile.languages : ''}
 ${profile.bio ? 'Background: '+profile.bio : ''}
 ${(profile.cvProjects||[]).length ? 'Relevant projects (mention 1–2 if they fit the role, briefly and naturally): '+(profile.cvProjects||[]).join(' | ') : ''}
@@ -2160,6 +2168,7 @@ Name: ${profile.name||'Bewerber'}
 Skills: ${profile.skills||'Softwareentwicklung'}
 Erfahrung: ${profile.experience||''}
 ${eduDE ? 'Ausbildung: '+eduDE : ''}
+${cvProjectsStr ? 'Projekte (aus CV): '+cvProjectsStr : ''}
 ${profile.languages ? 'Sprachen: '+profile.languages : ''}
 ${profile.bio ? 'Über mich: '+profile.bio : ''}
 ${(profile.cvProjects||[]).length ? 'Eigene Projekte (1–2 erwähnen falls zur Stelle passend, kurz und natürlich eingebaut): '+(profile.cvProjects||[]).join(' | ') : ''}
@@ -3070,4 +3079,3 @@ process.on('unhandledRejection', (reason) => {
   const msg = reason instanceof Error ? reason.message : String(reason);
   console.error('[!] Unhandled Rejection (Server läuft weiter):', msg);
 });
-

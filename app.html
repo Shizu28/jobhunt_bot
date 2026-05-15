@@ -204,7 +204,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <div style="font-size:28px;margin-bottom:8px;color:var(--mu2);font-family:'Syne',sans-serif;font-weight:700">JH</div>
     <div style="font-size:12px;line-height:1.6">Link einfügen &amp; generieren — oder im Dashboard eine Stelle → <strong>Anschreiben</strong></div>
   </div>
-  <div id="lsec" style="display:none">
+  <div id="lsec" style="display:block">
     <div id="lout-subject" style="display:none;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;color:var(--tx);padding:10px 14px;background:var(--s1);border:1px solid var(--bd);border-bottom:none;border-radius:6px 6px 0 0;letter-spacing:.01em"></div>
     <textarea id="lout" class="cursor" spellcheck="false"></textarea>
     <div id="regenBar" style="display:none;gap:6px;margin-top:8px;align-items:center">
@@ -985,7 +985,7 @@ async function generateLetter(job, force=false, feedback='') {
   // Live progress timer
   const isOllama = (typeof aiMode !== 'undefined' && aiMode === 'ollama');
   let elapsed = 0;
-  const spinner = ['','','','','','','','','',''];
+  const spinner = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
   let spinIdx = 0;
   const progressIv = setInterval(() => {
     elapsed++;
@@ -1079,11 +1079,16 @@ function downloadLetter() {
   const blob=new Blob([header+text],{type:'text/plain;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`Anschreiben_${(job?.company||'Stelle').replace(/[^a-zA-Z0-9]/g,'_')}.txt`;
+  a.download = _pdfName(job?.company, 'txt');
   a.click(); URL.revokeObjectURL(a.href);
 }
 
 let _letterPdfB64 = null, _letterPdfName = 'Anschreiben.pdf', _letterPdfContext = {};
+function _pdfName(company, ext) {
+  const d = new Date().toISOString().slice(0,10);
+  const c = (company||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]+/g,'_').replace(/^_|_$/g,'');
+  return `Anschreiben_${c}_${d}.${ext}`;
+}
 async function downloadLetterPdf() {
   const text = document.getElementById('lout').value;
   if (!text||text.trim().length<20){toast(' Kein Anschreiben vorhanden');return;}
@@ -1098,7 +1103,8 @@ async function downloadLetterPdf() {
     const blob = new Blob([buf], { type:'application/pdf' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = _letterPdfName;
+    const job4name = jobs.find(j=>j.id===selectedJobId);
+    a.download = job4name ? _pdfName(job4name.company, 'pdf') : _letterPdfName;
     a.click(); URL.revokeObjectURL(a.href);
   } catch(e) { toast(' '+e.message); }
   finally { btn.disabled=false; btn.textContent=' PDF laden'; }
@@ -1133,7 +1139,7 @@ async function generateFromUrl() {
     }, 8);
     // Store context for PDF naming
     _letterPdfContext = { title: r.title||'', company: r.company||'' };
-    _letterPdfName = `Anschreiben_${(r.company||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]/g,'_')}.pdf`;
+    _letterPdfName = _pdfName(r.company, 'pdf');
     status.style.display = 'none';
     selectedJobId = null; // not a tracked job
   } catch(e) {
@@ -1170,9 +1176,9 @@ function renderProjects() {
   if (!cvProjects.size) { container.innerHTML=''; if(ph){ph.style.display='';container.appendChild(ph);} return; }
   if (ph) ph.style.display='none';
   container.innerHTML = [...cvProjects].map(p => {
-    const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/'/g,"&#39;");
-    const safeJs = p.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(78,120,48,.12);border:1px solid rgba(78,120,48,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--a3);cursor:pointer;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safe}" onclick="removeProject('${safeJs}')">📁 ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
+    const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,"&#39;");
+    const safeJs = JSON.stringify(p).replace(/"/g, '&quot;');
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(78,120,48,.12);border:1px solid rgba(78,120,48,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--a3);cursor:pointer;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safe}" onclick="removeProject(${safeJs})">📁 ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
   }).join('');
 }
 function removeProject(p){ cvProjects.delete(p); renderProjects(); }
@@ -1180,13 +1186,14 @@ function removeProject(p){ cvProjects.delete(p); renderProjects(); }
 function setCvLabelLoaded(filename) {
   currentCVFile = filename;
   const dlUrl = `${BASE}/uploads/${encodeURIComponent(filename)}${authToken?'?token='+encodeURIComponent(authToken):''}`;
-  const safeJs = filename.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  document.getElementById('cvLabel').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">📄</div><div style="flex:1;min-width:0;text-align:left"><div style="color:var(--a);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHtml}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div></div><a href="${dlUrl}" download="${safeHtml}" onclick="event.stopPropagation()" style="background:rgba(78,120,48,.1);border:1px solid rgba(78,120,48,.25);border-radius:6px;padding:5px 9px;color:var(--a3);font-size:11px;text-decoration:none;flex-shrink:0;line-height:1">⬇</a><button onclick="event.stopPropagation();removeCV('${safeJs}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 9px;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1">✕</button></div>`;
+  const safeJs = JSON.stringify(filename).replace(/"/g, '&quot;');
+  const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  document.getElementById('cvLabel').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">📄</div><div style="flex:1;min-width:0;text-align:left"><div style="color:var(--a);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHtml}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div></div><a href="${dlUrl}" download="${safeHtml}" onclick="event.stopPropagation()" style="background:rgba(78,120,48,.1);border:1px solid rgba(78,120,48,.25);border-radius:6px;padding:5px 9px;color:var(--a3);font-size:11px;text-decoration:none;flex-shrink:0;line-height:1">⬇</a><button onclick="event.stopPropagation();removeCV(${safeJs})" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 9px;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1">✕</button></div>`;
 }
 
 async function removeCV(filename) {
-  if (!confirm(`Lebenslauf "${filename}" entfernen?`)) return;
+  const safeNameForConfirm = String(filename || '').replace(/["'`\\\r\n]/g, ' ');
+  if (!confirm(`Lebenslauf "${safeNameForConfirm}" entfernen?`)) return;
   await api('/api/files/'+encodeURIComponent(filename),'DELETE',null).catch(()=>{});
   currentCVFile = '';
   document.getElementById('cvLabel').innerHTML = `<div style="font-size:24px;margin-bottom:4px">📄</div><div>PDF hochladen</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills &amp; Projekte werden automatisch erkannt</div>`;
@@ -1660,7 +1667,7 @@ async function pullOllamaModel() {
             msg.textContent = `Lade ${model}...`;
           } else if (d.status === 'success') {
             barFill.style.width = '100%';
-            msg.innerHTML = `<span style="color:var(--a3)">✓ ${model} erfolgreich installiert!</span>`;
+            msg.innerHTML = `<span style="color:var(--a3)">✓ ${escapeHtml(String(model||''))} erfolgreich installiert!</span>`;
             detail.textContent = '';
             btn.textContent = '✓ Fertig';
             _installedModels.push(model);
@@ -1669,17 +1676,17 @@ async function pullOllamaModel() {
             api('/api/config','POST',{[configKey]: model}).catch(()=>{});
             setTimeout(() => { banner.style.display = 'none'; loadOllamaStatus(); }, 2500);
           } else if (d.status === 'error') {
-            msg.innerHTML = `<span style="color:#f87171">✗ Fehler: ${d.message}</span>`;
+            msg.innerHTML = `<span style="color:#f87171">✗ Fehler: ${escapeHtml(String(d.message||''))}</span>`;
             btn.disabled = false; btn.textContent = '↓ Erneut versuchen';
             detail.textContent = '';
           } else if (d.message) {
             detail.textContent = d.message;
           }
-        } catch(e) {}
+        } catch(e) { console.debug('[pull-ollama-model] invalid stream chunk', e); }
       }
     }
   } catch(e) {
-    msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+    msg.innerHTML = `<span style="color:#f87171">✗ ${escapeHtml(String(e.message||''))}</span>`;
     btn.disabled = false; btn.textContent = '↓ Erneut versuchen';
   }
 }
@@ -1763,7 +1770,9 @@ async function testOllama() {
   // Save current model selection first
   let ollamaModel = document.getElementById('ollamaModel')?.value || 'qwen3.6:27b';
   if (ollamaModel === 'custom') ollamaModel = document.getElementById('ollamaModelCustom').value || ollamaModel;
-  await api('/api/config','POST',{ollamaModel}).catch(()=>{});
+  const ollamaVisionModel = document.getElementById('ollamaVisionModel')?.value || 'llava:latest';
+  const ollamaLetterModel = document.getElementById('ollamaLetterModel')?.value || '';
+  await api('/api/config','POST',{ollamaModel, ollamaVisionModel, ollamaLetterModel}).catch(()=>{});
   try {
     const d = await api('/api/test-ollama');
     res.style.display = 'block';
@@ -1771,22 +1780,30 @@ async function testOllama() {
       res.style.background = 'rgba(52,211,153,.1)';
       res.style.border = '1px solid rgba(52,211,153,.2)';
       res.style.color = 'var(--a)';
+      const safeVisionModel = escapeHtml(String(d.visionModel || ''));
       const visionLine = d.visionAvailable
-        ? `<br/> Vision: <strong>${d.visionModel}</strong> verfügbar`
-        : `<br/> Vision: <strong>${d.visionModel}</strong> <span style="opacity:.7">(nicht installiert · <code>ollama pull ${d.visionModel}</code>)</span>`;
-      res.innerHTML = ` Ollama antwortet · Modell: <strong>${d.model}</strong><br/>Antwort: "${d.reply}"${visionLine}${d.models?.length?'<br/><span style="opacity:.65">Alle Modelle: '+d.models.join(', ')+'</span>':''}`;
+        ? `<br/> Vision: <strong>${safeVisionModel}</strong> verfügbar`
+        : `<br/> Vision: <strong>${safeVisionModel}</strong> <span style="opacity:.7">(nicht installiert · <code>ollama pull ${safeVisionModel}</code>)</span>`;
+      const _lm = ollamaLetterModel || ollamaModel;
+      const letterAvail = !d.models?.length || d.models.some(m=>m===_lm||m.startsWith(_lm.split(':')[0]));
+      const safeLetterModel = escapeHtml(String(_lm || ''));
+      const safeModel = escapeHtml(String(d.model || ''));
+      const safeReply = escapeHtml(String(d.reply || ''));
+      const safeInstalled = d.models?.length ? d.models.map(m => escapeHtml(String(m))).join(', ') : '';
+      const letterLine = `<br/>${letterAvail?'✅':'⚠'} Brief: <strong>${safeLetterModel}</strong>${letterAvail?'':' <span style="opacity:.7">(nicht installiert)</span>'}`;
+      res.innerHTML = `✅ Ollama antwortet · Text: <strong>${safeModel}</strong><br/>Antwort: "${safeReply}"${visionLine}${letterLine}${safeInstalled?'<br/><span style="opacity:.65">Installiert: '+safeInstalled+'</span>':''}`;
     } else {
       res.style.background = 'rgba(248,113,113,.1)';
       res.style.border = '1px solid rgba(248,113,113,.2)';
       res.style.color = 'var(--a3)';
-      res.innerHTML = ` ${d.error}`;
+      res.textContent = ` ${d.error || ''}`;
     }
   } catch(e) {
     res.style.display = 'block';
     res.style.background = 'rgba(248,113,113,.1)';
     res.style.border = '1px solid rgba(248,113,113,.2)';
     res.style.color = 'var(--a3)';
-    res.innerHTML = ` ${e.message}`;
+    res.textContent = ` ${e.message || ''}`;
   }
   btn.disabled = false; btn.textContent = 'Ollama testen';
 }
@@ -1806,8 +1823,9 @@ async function loadServerStatus(){
       Letzter Scan: ${s.lastScan ? timeSince(s.lastScan) : 'noch nie'}<br/>
       Scans gesamt: ${s.scanCount}<br/>
       Jobs gespeichert: ${s.jobCount}<br/>
-      KI-Modus: <strong style="color:${s.aiMode==='ollama'?'var(--a4)':'var(--a2)'}">${s.aiMode==='ollama'?'Ollama ('+s.ollamaModel+')':'Anthropic ('+s.anthropicModel+')'}</strong><br/>
-      API Key: ${s.apiKeySet ? ' vorhanden' : ' fehlt'}<br/>
+      KI-Modus: <strong style="color:${s.aiMode==='ollama'?'var(--a4)':'var(--a2)'}">${s.aiMode==='ollama'?'Ollama':'Anthropic ('+s.anthropicModel+')'}</strong><br/>
+      ${s.aiMode==='ollama'?'📝 Text: <strong>'+s.ollamaModel+'</strong><br/>👁 Vision: <strong>'+s.ollamaVisionModel+'</strong><br/>✉ Brief: <strong>'+(s.ollamaLetterModel||s.ollamaModel)+'</strong><br/>':''}
+      API Key: ${s.apiKeySet ? '✅ vorhanden' : '❌ fehlt'}<br/>
       E-Mail Bewerbung: ${s.smtpConfigured ? 'SMTP aktiv' : 'kein SMTP (Anschreiben wird kopiert)'}${s.userEmail?' · '+s.userEmail:''}`;
     // Sync toggle state
     if (s.aiMode) {
@@ -1982,15 +2000,23 @@ async function downloadAutoLetterPdf() {
     const blob = new Blob([buf], { type:'application/pdf' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `Anschreiben_${(_autoLetterJob?.company||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]/g,'_')}.pdf`;
+    a.download = _pdfName(_autoLetterJob?.company, 'pdf');
     a.click(); URL.revokeObjectURL(a.href);
   } catch(e) { toast(' ' + e.message); }
   finally { btn.disabled = false; btn.textContent = ' PDF'; }
 }
 
-let autoSession = null, autoPollIv = null, autoCurrentJobId = null;
+let autoSession = null, autoPollIv = null, autoCurrentJobId = null, _autoLetterShown = '';
 
 async function autoApply(jobId, _inTab) {
+  // Block if a session is already running
+  if (autoSession && autoPollIv) {
+    const warn = document.getElementById('autoBotRunningWarn');
+    if (warn) { warn.style.display = 'block'; setTimeout(() => warn.style.display = 'none', 6000); }
+    document.getElementById('autoOverlay').style.display = 'flex';
+    pollAutoSession(); // sofort Button-Status aktualisieren
+    return;
+  }
   // Open in a new tab unless we already ARE the auto-tab
   if (!_inTab && !new URLSearchParams(location.search).has('auto')) {
     window.open(location.origin + location.pathname + '?auto=' + encodeURIComponent(jobId), '_blank');
@@ -2004,8 +2030,14 @@ async function autoApply(jobId, _inTab) {
   document.getElementById('autoScreenWrap').style.display = 'none';
   const lp = document.getElementById('autoLetterPanel');
   const lt = document.getElementById('autoLetterText');
-  if (lp) lp.style.display = 'none';
   if (lt) lt.textContent = '';
+  window._autoThinkStart = null;
+  clearInterval(window._autoThinkIv);
+  const oldThink = document.getElementById('autoThinkBar');
+  if (oldThink) oldThink.remove();
+  _autoLetterShown = '';
+  const lt0 = document.getElementById('autoLetterText');
+  if (lt0) { lt0.textContent = '⏳ Anschreiben wird generiert...'; lt0.style.color = 'var(--mu2)'; }
   const sb = document.getElementById('autoSubmitBtn');
   sb.style.display = 'none'; sb.disabled = false; sb.textContent = ' Jetzt absenden';
   document.getElementById('autoOverlay').style.display = 'flex';
@@ -2016,6 +2048,7 @@ async function autoApply(jobId, _inTab) {
       return;
     }
     autoSession = r.sessionId;
+    pollAutoSession(); // sofort ersten Stand holen
     autoPollIv = setInterval(pollAutoSession, 1800);
   } catch(e) {
     document.getElementById('autoSteps').innerHTML = `<div style="color:var(--a3)"> ${e.message}</div>`;
@@ -2027,7 +2060,8 @@ async function pollAutoSession() {
   try {
     const r = await api('/api/auto-apply/' + autoSession, 'GET');
     const stepsEl = document.getElementById('autoSteps');
-    stepsEl.innerHTML = r.steps.filter(Boolean).map(s =>
+    const steps = r.steps.filter(Boolean);
+    stepsEl.innerHTML = steps.map(s =>
       `<div style="color:${
         s.startsWith('[Vision-OK]')  ? 'var(--a3)' :
         s.startsWith('[Vision-Raw]') ? '#b89ae8' :
@@ -2039,6 +2073,34 @@ async function pollAutoSession() {
         s.startsWith('[wait]') ? 'var(--mu2)' : 'var(--tx)'
       }">${s}</div>`
     ).join('');
+    // Show live thinking indicator if Qwen/KI is currently deciding
+    const lastStep = steps[steps.length - 1] || '';
+    const isThinking = lastStep.includes('entscheidet Aktion') || lastStep.includes('analysiert') || lastStep.includes('generiert');
+    const thinkEl = document.getElementById('autoThinkBar');
+    if (isThinking) {
+      if (!thinkEl) {
+        const div = document.createElement('div');
+        div.id = 'autoThinkBar';
+        div.style.cssText = 'margin-top:8px;padding:8px 12px;background:rgba(154,130,200,.12);border:1px solid rgba(154,130,200,.25);border-radius:6px;font-size:11px;color:#b89ae8;font-family:\'DM Mono\',monospace;display:flex;align-items:center;gap:8px';
+        div.innerHTML = '<span id="autoThinkDots" style="letter-spacing:2px">⠋</span><span id="autoThinkTimer">KI denkt nach... 0s</span>';
+        stepsEl.parentNode.insertBefore(div, stepsEl.nextSibling);
+        window._autoThinkStart = window._autoThinkStart || Date.now();
+        const frames = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
+        let fi = 0;
+        window._autoThinkIv = setInterval(() => {
+          const el = document.getElementById('autoThinkDots');
+          const te = document.getElementById('autoThinkTimer');
+          if (!el) { clearInterval(window._autoThinkIv); return; }
+          fi = (fi+1) % frames.length;
+          el.textContent = frames[fi];
+          const sec = Math.round((Date.now() - window._autoThinkStart) / 1000);
+          te.textContent = `KI denkt nach... ${sec}s`;
+        }, 150);
+      }
+    } else {
+      if (thinkEl) { thinkEl.remove(); clearInterval(window._autoThinkIv); }
+      window._autoThinkStart = null;
+    }
     stepsEl.scrollTop = stepsEl.scrollHeight;
     if (r.screenshot) {
       document.getElementById('autoScreenImg').src = 'data:image/jpeg;base64,' + r.screenshot;
@@ -2054,13 +2116,21 @@ async function pollAutoSession() {
     const submitBtn = document.getElementById('autoSubmitBtn');
     const continueBtn = document.getElementById('autoContinueBtn');
     const reopenBtn  = document.getElementById('autoReopenBtn');
+    const killBtn    = document.getElementById('autoKillBtn');
     submitBtn.style.display  = r.status === 'ready' ? 'block' : 'none';
     continueBtn.style.display = r.status === 'waiting_manual' ? 'block' : 'none';
     reopenBtn.style.display   = (r.status === 'browser_closed' || r.status === 'error') ? 'block' : 'none';
-    if (r.letter) {
-      const lp = document.getElementById('autoLetterPanel');
+    // Show kill button for ANY active session (not just error states)
+    const activeStatuses = ['starting','launching','running','waiting_manual','ready','browser_closed','error'];
+    killBtn.style.display = activeStatuses.includes(r.status) ? 'block' : 'none';
+    if (r.letter && r.letter !== _autoLetterShown) {
+      _autoLetterShown = r.letter;
       const lt = document.getElementById('autoLetterText');
-      if (lp && lt && !lt.textContent) { lt.textContent = r.letter; lp.style.display = 'block'; }
+      if (lt) {
+        lt.textContent = r.letter;
+        lt.style.color = 'var(--tx)';
+        lt.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
     if (['submitted','closed','error','gone'].includes(r.status)) {
       clearInterval(autoPollIv); autoPollIv = null;
@@ -2103,6 +2173,91 @@ async function autoSubmit() {
     renderJobList();
     clearInterval(autoPollIv); autoPollIv = null;
   } catch(e) { document.getElementById('autoSteps').innerHTML += `<div style="color:var(--a3)"> ${e.message}</div>`; btn.disabled=false; btn.textContent=' Jetzt absenden'; }
+}
+
+async function autoKill() {
+  if (!autoSession) { autoClose(true); return; }
+  const btn = document.getElementById('autoKillBtn');
+  btn.disabled = true; btn.textContent = '⏳ Beende...';
+  try { await api('/api/auto-apply/' + autoSession + '/close', 'POST', {}); } catch(e) {}
+  clearInterval(autoPollIv); autoPollIv = null;
+  autoSession = null;
+  document.getElementById('autoOverlay').style.display = 'none';
+  stopVoice();
+  toast('🗑 Bot-Session beendet');
+}
+
+function autoEditLetter() {
+  const pre = document.getElementById('autoLetterText');
+  const ta  = document.getElementById('autoLetterEdit');
+  const act = document.getElementById('autoLetterActions');
+  const editBtn = document.getElementById('autoLetterEditBtn');
+  if (ta.style.display === 'none' || !ta.style.display) {
+    ta.value = pre.textContent;
+    ta.style.display = 'block';
+    pre.style.display = 'none';
+    act.style.display = 'flex';
+    editBtn.textContent = 'Vorschau';
+  } else {
+    ta.style.display = 'none';
+    pre.style.display = 'block';
+    act.style.display = 'none';
+    editBtn.textContent = 'Bearbeiten';
+  }
+}
+
+function autoSaveLetterEdit() {
+  const ta  = document.getElementById('autoLetterEdit');
+  const pre = document.getElementById('autoLetterText');
+  const act = document.getElementById('autoLetterActions');
+  const editBtn = document.getElementById('autoLetterEditBtn');
+  pre.textContent = ta.value;
+  pre.style.color = 'var(--tx)';
+  ta.style.display = 'none';
+  pre.style.display = 'block';
+  act.style.display = 'none';
+  editBtn.textContent = 'Bearbeiten';
+  toast('✓ Anschreiben gespeichert');
+}
+
+function autoDiscardLetterEdit() {
+  const ta  = document.getElementById('autoLetterEdit');
+  const pre = document.getElementById('autoLetterText');
+  const act = document.getElementById('autoLetterActions');
+  const editBtn = document.getElementById('autoLetterEditBtn');
+  ta.style.display = 'none';
+  pre.style.display = 'block';
+  act.style.display = 'none';
+  editBtn.textContent = 'Bearbeiten';
+}
+
+async function autoRegenLetter() {
+  const feedback = document.getElementById('autoLetterFeedback').value.trim();
+  const pre = document.getElementById('autoLetterText');
+  const ta  = document.getElementById('autoLetterEdit');
+  const btn = document.querySelector('[onclick="autoRegenLetter()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generiert...'; }
+  pre.textContent = '⏳ Anschreiben wird neu generiert...';
+  pre.style.color = 'var(--mu2)';
+  ta.style.display = 'none';
+  pre.style.display = 'block';
+  document.getElementById('autoLetterActions').style.display = 'none';
+  document.getElementById('autoLetterEditBtn').textContent = 'Bearbeiten';
+  try {
+    const job = jobs.find(j => j.id === autoCurrentJobId) || {};
+    const r = await api('/api/coverletter', 'POST', { job, feedback: feedback || undefined, force: true });
+    if (r.letter) {
+      pre.textContent = r.letter;
+      pre.style.color = 'var(--tx)';
+      document.getElementById('autoLetterFeedback').value = '';
+      toast('✓ Anschreiben neu generiert');
+    } else {
+      pre.textContent = '⚠ Fehler: ' + (r.error || 'Unbekannt');
+    }
+  } catch(e) {
+    pre.textContent = '⚠ ' + e.message;
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '↻ Neu generieren'; }
 }
 
 async function autoClose(skipDialog) {
@@ -2447,7 +2602,32 @@ init();
       <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:.01em">Browser-Bewerbung</div>
     </div>
     <div id="autoJobLabel" style="font-size:11px;color:var(--mu2);margin-bottom:14px;padding-left:2px"></div>
+    <div id="autoBotRunningWarn" style="display:none;background:rgba(184,98,62,.15);border:1px solid rgba(184,98,62,.5);border-radius:8px;padding:11px 14px;margin-bottom:12px;font-size:12px;color:var(--a);font-family:'DM Mono',monospace;line-height:1.6">
+      ⚠ Ein Bot läuft bereits. Bitte erst abschliessen oder schliessen bevor ein neuer gestartet wird.
+    </div>
     <div id="autoSteps" style="background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:14px 16px;max-height:220px;overflow-y:auto;font-size:11px;line-height:2.1;font-family:'DM Mono',monospace;margin-bottom:12px;color:var(--mu2)"></div>
+    <!-- Anschreiben-Panel (direkt nach Log) -->
+    <div id="autoLetterPanel" style="display:block;background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd)">
+        <span style="font-size:11px;color:var(--mu2);"> Generiertes Anschreiben</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="toggleLetter()" id="autoLetterToggle" style="background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">verbergen</button>
+          <button onclick="autoEditLetter()" id="autoLetterEditBtn" style="background:rgba(176,125,158,.1);border:1px solid rgba(176,125,158,.25);border-radius:6px;padding:4px 10px;color:var(--a4);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">Bearbeiten</button>
+          <button onclick="navigator.clipboard?.writeText(document.getElementById('autoLetterText').textContent).then(()=>toast(' Kopiert!'))" style="background:rgba(212,132,90,.1);border:1px solid rgba(212,132,90,.2);border-radius:6px;padding:4px 10px;color:var(--a);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">Kopieren</button>
+          <button id="autoLetterPdfBtn" onclick="downloadAutoLetterPdf()" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:4px 10px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">PDF</button>
+        </div>
+      </div>
+      <div id="autoLetterBody" style="display:block">
+        <pre id="autoLetterText" style="padding:12px 14px;font-size:11px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--mu2);font-family:'DM Mono',monospace;margin:0;max-height:200px;overflow-y:auto">⏳ Anschreiben wird generiert...</pre>
+        <textarea id="autoLetterEdit" style="display:none;width:100%;box-sizing:border-box;padding:12px 14px;font-size:11px;line-height:1.7;color:var(--tx);font-family:'DM Mono',monospace;background:var(--s2);border:none;border-top:1px solid var(--bd);resize:vertical;min-height:160px;outline:none"></textarea>
+        <div id="autoLetterActions" style="display:none;padding:8px 12px;border-top:1px solid var(--bd);display:none;gap:6px;flex-wrap:wrap;align-items:center">
+          <input id="autoLetterFeedback" type="text" placeholder="Feedback für Neu-Generierung… z.B. 'mehr auf TypeScript eingehen'" style="flex:1;min-width:0;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:7px 10px;color:var(--tx);font-size:11px;font-family:'DM Mono',monospace;outline:none"/>
+          <button onclick="autoRegenLetter()" style="white-space:nowrap;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:6px;padding:7px 12px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">↻ Neu generieren</button>
+          <button onclick="autoSaveLetterEdit()" style="white-space:nowrap;background:rgba(78,140,100,.12);border:1px solid rgba(78,140,100,.3);border-radius:6px;padding:7px 12px;color:#7ec89e;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">✓ Speichern</button>
+          <button onclick="autoDiscardLetterEdit()" style="white-space:nowrap;background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">Abbrechen</button>
+        </div>
+      </div>
+    </div>
     <div id="autoScreenWrap" style="display:none;margin-bottom:12px">
       <div style="font-size:10px;color:var(--mu2);margin-bottom:5px">Was die KI gerade sieht (klicken zum Vergrößern)</div>
       <img id="autoScreenImg" style="width:100%;border-radius:8px;border:1px solid var(--bd);cursor:zoom-in" onclick="this.style.width=this.style.width==='100%'?'auto':'100%'" alt="Browser Screenshot"/>
@@ -2471,6 +2651,7 @@ init();
       <button id="autoSubmitBtn" onclick="autoSubmit()" style="display:none;flex:2;background:var(--a);border:none;border-radius:6px;padding:13px;color:#fff;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">Jetzt absenden</button>
       <button id="autoContinueBtn" onclick="autoContinue()" style="display:none;flex:2;background:rgba(176,125,158,.15);border:1px solid rgba(176,125,158,.4);border-radius:6px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">Fortsetzen</button>
       <button id="autoReopenBtn" onclick="autoReopen()" style="display:none;flex:2;background:rgba(56,130,200,.15);border:1px solid rgba(56,130,200,.4);border-radius:6px;padding:13px;color:#6ab0f5;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">🌐 Browser öffnen</button>
+      <button id="autoKillBtn" onclick="autoKill()" style="display:none;flex:2;background:rgba(184,98,62,.15);border:1px solid rgba(184,98,62,.4);border-radius:6px;padding:13px;color:var(--a);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">🗑 Session beenden</button>
       <button onclick="autoClose()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:6px;padding:13px;color:var(--mu2);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer">Schließen</button>
     </div>
     <!-- Anweisung an Bot -->
