@@ -1783,8 +1783,8 @@ async function autoApply(jobId, _inTab) {
   if (autoSession && autoPollIv) {
     const warn = document.getElementById('autoBotRunningWarn');
     if (warn) { warn.style.display = 'block'; setTimeout(() => warn.style.display = 'none', 6000); }
-    // Open the overlay so user can see/kill the running bot
     document.getElementById('autoOverlay').style.display = 'flex';
+    pollAutoSession(); // sofort Button-Status aktualisieren
     return;
   }
   // Open in a new tab unless we already ARE the auto-tab
