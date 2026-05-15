@@ -207,6 +207,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
   <div id="lsec" style="display:none">
     <div id="lout-subject" style="display:none;font-family:'DM Mono',monospace;font-weight:700;font-size:13px;color:var(--tx);padding:10px 14px;background:var(--s1);border:1px solid var(--bd);border-bottom:none;border-radius:6px 6px 0 0;letter-spacing:.01em"></div>
     <textarea id="lout" class="cursor" spellcheck="false"></textarea>
+    <div id="regenBar" style="display:none;gap:6px;margin-top:8px;align-items:center">
+      <input id="regenInput" class="inp" placeholder="Feedback / Anweisung (optional) – z.B. kürzer, mehr Fokus auf React, formeller..." style="flex:1;min-width:0;font-size:12px;padding:8px 10px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doRegen();}if(event.key==='Escape'){this.closest('#regenBar').style.display='none';}"/>
+      <button onclick="doRegen()" style="flex-shrink:0;width:auto;background:var(--a);color:#fff;font-weight:700;border:none;border-radius:6px;padding:9px 16px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;white-space:nowrap">↺ Generieren</button>
+    </div>
     <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn btnp" style="flex:2;font-size:12px" onclick="applyNow()">Jetzt bewerben</button>
       <button class="btn btns" style="flex:1;font-size:12px" onclick="regenLetter()">Neu generieren</button>
@@ -309,6 +313,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     </div>
   </div>
 
+  <!-- PROJEKTE -->
+  <div class="stitle">Projekte</div>
+  <div class="card">
+    <div style="font-size:11px;color:var(--mu2);margin-bottom:10px;line-height:1.6">Aus Lebenslauf extrahiert &middot; werden im Anschreiben erw&auml;hnt wenn zur Stelle passend</div>
+    <div id="projectChips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;margin-bottom:8px">
+      <span style="font-size:11px;color:var(--mu);font-style:italic" id="projectPh">Noch keine Projekte &ndash; Lebenslauf hochladen</span>
+    </div>
+  </div>
+
   <!-- DOKUMENTE -->
   <div class="stitle">Dokumente</div>
   <div class="card">
@@ -318,11 +331,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
         <span style="font-size:12px;color:var(--mu2)"> Lebenslauf (PDF)</span>
         <span id="cvStatus" style="font-size:10px;color:var(--a);display:none">Analysiere...</span>
       </div>
-      <label style="display:block;cursor:pointer">
+      <label style="display:block;cursor:pointer" id="cvPickerLabel">
         <div id="cvLabel" style="background:var(--s2);border:1px dashed rgba(212,132,90,.25);border-radius:6px;padding:16px;text-align:center;font-size:12px;color:var(--mu2)">
           <div style="font-size:24px;margin-bottom:4px"></div>
           <div>PDF hochladen</div>
-          <div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills werden automatisch erkannt</div>
+          <div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills &amp; Projekte werden automatisch erkannt</div>
         </div>
         <input type="file" accept=".pdf" style="display:none" id="cvInput" onchange="handleCV(this)"/>
       </label>
@@ -464,7 +477,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
     <div id="ollamaSec" style="display:none">
       <div style="margin-bottom:10px">
         <label class="lbl">Ollama Modell (Text)</label>
-        <select class="inp" id="ollamaModel" style="cursor:pointer">
+        <select class="inp" id="ollamaModel" style="cursor:pointer" onchange="onModelDropdownChange('ollamaModel',this.value)">
           <option value="custom">Eigenes Modell...</option>
           <optgroup label="── Neu (2025/2026) ──">
             <option value="qwen3.6:27b">Qwen3.6 27B – Vision + Tools + Thinking (empfohlen)</option>
@@ -485,7 +498,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       </div>
       <div style="margin-bottom:10px">
         <label class="lbl">Vision-Modell (Browser-Automatisierung)</label>
-        <select class="inp" id="ollamaVisionModel" style="cursor:pointer">
+        <select class="inp" id="ollamaVisionModel" style="cursor:pointer" onchange="onModelDropdownChange('ollamaVisionModel',this.value)">
           <optgroup label="── Neu (2025/2026) ──">
             <option value="qwen3.6:27b">Qwen3.6 27B – Vision + Tools + Thinking (empfohlen)</option>
             <option value="qwen3-vl:8b">Qwen3-VL 8B – dediziertes Vision-Modell</option>
@@ -507,7 +520,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       </div>
       <div style="margin-bottom:10px">
         <label class="lbl">Anschreiben-Modell (schnell, für Texte)</label>
-        <select class="inp" id="ollamaLetterModel" style="cursor:pointer">
+        <select class="inp" id="ollamaLetterModel" style="cursor:pointer" onchange="onModelDropdownChange('ollamaLetterModel',this.value)">
           <option value="">Wie Text-Modell (Standard)</option>
           <optgroup label="── Schnell (empfohlen für Anschreiben) ──">
             <option value="qwen3.5:4b">Qwen3.5 4B – sehr schnell, gut für Texte</option>
@@ -523,6 +536,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
           </optgroup>
         </select>
         <div style="margin-top:5px;font-size:10px;color:var(--mu)">Tipp: <code style="background:var(--s2);padding:2px 5px;border-radius:3px">ollama pull qwen3.5:4b</code> (~2.6 GB) – Anschreiben in ~30s statt mehreren Minuten</div>
+      </div>
+      <!-- Pull banner -->
+      <div id="ollamaPullBanner" style="display:none;margin-bottom:10px;padding:12px 14px;background:rgba(176,125,158,.08);border:1px solid rgba(176,125,158,.25);border-radius:8px;font-size:11px;color:var(--mu2)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+          <span id="ollamaPullMsg" style="flex:1">Modell nicht installiert</span>
+          <button id="ollamaPullBtn" onclick="pullOllamaModel()" style="flex-shrink:0;background:var(--a4);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;white-space:nowrap">↓ Herunterladen</button>
+          <button onclick="document.getElementById('ollamaPullBanner').style.display='none'" style="flex-shrink:0;background:none;border:none;color:var(--mu);font-size:14px;cursor:pointer;padding:0 4px">×</button>
+        </div>
+        <div id="ollamaPullBarWrap" style="display:none">
+          <div style="background:rgba(176,125,158,.15);border-radius:4px;height:6px;overflow:hidden;margin-bottom:6px">
+            <div id="ollamaPullBarFill" style="height:100%;width:0%;background:var(--a4);border-radius:4px;transition:width .3s"></div>
+          </div>
+          <div id="ollamaPullDetail" style="font-size:10px;color:var(--mu)"></div>
+        </div>
       </div>
       <div id="ollamaStatus" style="padding:10px 12px;background:var(--s2);border-radius:6px;font-size:11px;line-height:1.7;color:var(--mu2)">
         Prüfe Ollama...
@@ -614,7 +641,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
 
 <script>
 const BASE = window.location.origin;
-let jobs=[], selectedJobId=null, currentLetter='', skillSet=new Set(), cvSkills=new Set();
+let jobs=[], selectedJobId=null, currentLetter='', skillSet=new Set(), cvSkills=new Set(), cvProjects=new Set(), currentCVFile='';
+
 let searchCfg={ keywords:[], custom_sources:[] };
 function ic(name,size=14){return `<i data-lucide="${name}" style="width:${size}px;height:${size}px;display:inline-flex;vertical-align:middle;flex-shrink:0;pointer-events:none"></i>`;}
 let docs=[]; // { name, size, type, emoji }
@@ -948,7 +976,7 @@ function openLetter(id) {
   generateLetter(job);
 }
 
-async function generateLetter(job) {
+async function generateLetter(job, force=false, feedback='') {
   const out=document.getElementById('lout');
   out.value=''; out.classList.add('cursor'); currentLetter='';
   // Reset subject display during loading
@@ -962,25 +990,32 @@ async function generateLetter(job) {
   const progressIv = setInterval(() => {
     elapsed++;
     spinIdx = (spinIdx+1) % spinner.length;
-    out.value = `${spinner[spinIdx]} ${isOllama ? 'Ollama (70B)' : 'KI'} generiert Anschreiben... (${elapsed}s)\n\nBitte warten – bei großen Modellen dauert das 2-5 Minuten.`;
+    const letterModelName = (typeof aiMode !== 'undefined' && aiMode === 'ollama')
+      ? (document.getElementById('ollamaLetterModel')?.value || document.getElementById('ollamaModel')?.value || 'Ollama')
+      : 'Claude';
+    out.value = `${spinner[spinIdx]} ${letterModelName} generiert Anschreiben... (${elapsed}s)\n\nBitte warten – bei kleinen Modellen ~30s, bei großen 2-5 Min.`;
   }, 1000);
   try {
-    const data=await api('/api/coverletter','POST',{job});
+    const data=await api('/api/coverletter','POST',{job, force, feedback: feedback||undefined});
     clearInterval(progressIv);
     if (data.error) throw new Error(data.error);
     const text=data.letter||''; currentLetter=text;
+    // Set PDF filename/context for this job
+    _letterPdfContext = { title: job.title||'', company: job.company||'' };
+    _letterPdfName = `Anschreiben_${(job.company||job.title||'Stelle').replace(/[^a-zA-Z0-9äöüÄÖÜß]/g,'_')}.pdf`;
+    if (!text.trim()) { out.value = '⚠ Kein Text vom Modell zurückgekommen – bitte nochmal versuchen.'; out.classList.remove('cursor'); return; }
     // Extract and display subject line bold
     const lines = text.split('\n');
     const subjectEl = document.getElementById('lout-subject');
     if (lines[0] && lines[0].trim()) {
       subjectEl.textContent = lines[0].trim();
       subjectEl.style.display = 'block';
-      // Attach top-radius to textarea
       out.style.borderRadius = '0 0 6px 6px';
       out.style.borderTop = 'none';
     } else { subjectEl.style.display = 'none'; out.style.borderRadius = ''; out.style.borderTop = ''; }
-    out.value='';
-    let i=0; const iv=setInterval(()=>{if(i>=text.length){clearInterval(iv);out.classList.remove('cursor');return;}out.value+=text[i++];},10);
+    out.value = text;
+    out.classList.remove('cursor');
+    toast('✅ Anschreiben fertig (' + elapsed + 's)');
   } catch(e) {
     clearInterval(progressIv);
     out.classList.remove('cursor');
@@ -993,7 +1028,26 @@ async function generateLetter(job) {
   }
 }
 
-function regenLetter(){const j=jobs.find(j=>j.id===selectedJobId);if(j)generateLetter(j);}
+function regenLetter() {
+  const j = jobs.find(j => j.id === selectedJobId);
+  if (!j) return;
+  const bar = document.getElementById('regenBar');
+  if (bar.style.display === 'none' || !bar.style.display) {
+    bar.style.display = 'flex';
+    document.getElementById('regenInput').focus();
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function doRegen() {
+  const j = jobs.find(j => j.id === selectedJobId);
+  if (!j) return;
+  const feedback = document.getElementById('regenInput').value.trim();
+  document.getElementById('regenBar').style.display = 'none';
+  document.getElementById('regenInput').value = '';
+  await generateLetter(j, true, feedback);
+}
 function copyLetter(){const t=document.getElementById('lout').value;navigator.clipboard?.writeText(t).then(()=>toast(' Kopiert!'));}
 function markAppliedCurrent(){if(selectedJobId)markApplied(selectedJobId);}
 
@@ -1093,18 +1147,51 @@ async function generateFromUrl() {
 //  SKILLS 
 function renderSkills() {
   const c=document.getElementById('skillChips');
-  document.getElementById('skillPh').style.display=skillSet.size?'none':'';
+  if (!skillSet.size) {
+    c.innerHTML=`<span style="font-size:11px;color:var(--mu);font-style:italic" id="skillPh">Noch keine Skills &ndash; Lebenslauf hochladen oder manuell eingeben</span>`;
+    return;
+  }
   const chips=[...skillSet].map(s=>{
     const safe=s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     return `<span class="chip ${cvSkills.has(s)?'chip-cv':'chip-manual'}" data-skill="${safe}">${cvSkills.has(s)?'':''} ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
   }).join('');
-  c.innerHTML=chips+(skillSet.size?'':document.getElementById('skillPh').outerHTML);
+  c.innerHTML=chips;
   c.querySelectorAll('.chip[data-skill]').forEach(el=>{
     el.addEventListener('click',()=>removeSkill(el.dataset.skill));
   });
 }
 
 function removeSkill(s){skillSet.delete(s);cvSkills.delete(s);renderSkills();}
+
+function renderProjects() {
+  const container = document.getElementById('projectChips');
+  const ph = document.getElementById('projectPh');
+  if (!container) return;
+  if (!cvProjects.size) { container.innerHTML=''; if(ph){ph.style.display='';container.appendChild(ph);} return; }
+  if (ph) ph.style.display='none';
+  container.innerHTML = [...cvProjects].map(p => {
+    const safe = p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/'/g,"&#39;");
+    const safeJs = p.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(78,120,48,.12);border:1px solid rgba(78,120,48,.3);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--a3);cursor:pointer;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${safe}" onclick="removeProject('${safeJs}')">📁 ${safe} <span style="opacity:.6;font-size:10px">×</span></span>`;
+  }).join('');
+}
+function removeProject(p){ cvProjects.delete(p); renderProjects(); }
+
+function setCvLabelLoaded(filename) {
+  currentCVFile = filename;
+  const dlUrl = `${BASE}/uploads/${encodeURIComponent(filename)}${authToken?'?token='+encodeURIComponent(authToken):''}`;
+  const safeJs = filename.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  document.getElementById('cvLabel').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">📄</div><div style="flex:1;min-width:0;text-align:left"><div style="color:var(--a);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${safeHtml}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div></div><a href="${dlUrl}" download="${safeHtml}" onclick="event.stopPropagation()" style="background:rgba(78,120,48,.1);border:1px solid rgba(78,120,48,.25);border-radius:6px;padding:5px 9px;color:var(--a3);font-size:11px;text-decoration:none;flex-shrink:0;line-height:1">⬇</a><button onclick="event.stopPropagation();removeCV('${safeJs}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:5px 9px;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0;line-height:1">✕</button></div>`;
+}
+
+async function removeCV(filename) {
+  if (!confirm(`Lebenslauf "${filename}" entfernen?`)) return;
+  await api('/api/files/'+encodeURIComponent(filename),'DELETE',null).catch(()=>{});
+  currentCVFile = '';
+  document.getElementById('cvLabel').innerHTML = `<div style="font-size:24px;margin-bottom:4px">📄</div><div>PDF hochladen</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills &amp; Projekte werden automatisch erkannt</div>`;
+  toast('✅ Lebenslauf entfernt');
+}
 
 function addSkill(){
   const inp=document.getElementById('skillIn');
@@ -1113,66 +1200,109 @@ function addSkill(){
 }
 
 //  CV UPLOAD + ANALYSIS 
+function parseCvRaw(raw) {
+  let clean = raw.replace(/```json|```/gi, '').trim();
+  const jsonMatch = clean.match(/\{[\s\S]*\}/);
+  if (jsonMatch) clean = jsonMatch[0];
+  return JSON.parse(clean);
+}
+function parseCvFallback(raw) {
+  const extract = (key) => { const m = raw.match(new RegExp('"'+key+'"\\s*:\\s*\\[([^\\]]*?)\\]')); if (!m) return []; return [...m[1].matchAll(/"([^"]+)"/g)].map(x=>x[1]); };
+  return { technical: extract('technical'), languages: extract('languages'), tools: extract('tools'), soft: extract('soft'), domains: extract('domains'), projects: extract('projects'), experience_summary: '' };
+}
+function applyCvParsed(parsed) {
+  const all=[...(parsed.languages||[]),...(parsed.technical||[]),...(parsed.tools||[]),...(parsed.soft||[]),...(parsed.domains||[])];
+  all.forEach(s=>{cvSkills.add(s);skillSet.add(s);});
+  (parsed.projects||[]).forEach(p=>{ if(p&&p.trim()) cvProjects.add(p.trim()); });
+  if (parsed.experience_summary&&!document.getElementById('pExp').value) document.getElementById('pExp').value=parsed.experience_summary;
+  renderSkills(); renderProjects();
+  return all;
+}
+
 async function handleCV(input) {
   const file=input.files[0]; if(!file) return;
-  document.getElementById('cvLabel').innerHTML=`<div style="font-size:24px;margin-bottom:4px"></div><div style="color:var(--a)">${file.name}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div>`;
+  setCvLabelLoaded(file.name);
 
   const cvProg=document.getElementById('cvProg');
   const cvFill=document.getElementById('cvProgFill');
   const cvTxt=document.getElementById('cvProgTxt');
   const cvSt=document.getElementById('cvStatus');
   cvProg.style.display='block'; cvSt.style.display='block'; cvSt.textContent='Lese PDF...';
-
-  let p=0; const iv=setInterval(()=>{p=Math.min(p+Math.random()*7,85);cvFill.style.width=p+'%';},300);
-  // Elapsed time counter so user sees it's still working
-  const startTs = Date.now();
-  const timerIv = setInterval(()=>{
-    const secs = Math.floor((Date.now()-startTs)/1000);
-    const hint = secs > 60 ? ` (${Math.floor(secs/60)}min ${secs%60}s – Ollama lädt Modell oder analysiert, bitte warten...)` : ` (${secs}s...)`;
-    cvTxt.textContent = 'KI extrahiert Skills aus deinem Lebenslauf...' + hint;
-  }, 1000);
+  cvFill.style.width='5%';
 
   try {
     const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
-    // Upload CV to server so bot can find it and it persists after reload
     await api('/api/upload','POST',{filename:file.name,data:base64}).catch(()=>{});
-    cvSt.textContent='KI analysiert...'; cvTxt.textContent='KI extrahiert Skills aus deinem Lebenslauf...';
 
-    const data=await api('/api/analyze-cv','POST',{base64,mediaType:'application/pdf'});
-    clearInterval(timerIv);
-    if (data.error) throw new Error(data.error);
+    const sep = BASE.includes('?') ? '&' : '?';
+    const streamUrl = BASE + '/api/analyze-cv-stream' + (authToken ? sep+'token='+encodeURIComponent(authToken) : '');
+    const response = await fetch(streamUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({base64}),
+    });
 
-    clearInterval(iv); cvFill.style.width='100%';
-    let parsed;
-    try {
-      // Strip markdown fences, leading/trailing whitespace, and any text before/after the JSON object
-      let clean = data.raw.replace(/```json|```/gi, '').trim();
-      // Extract the first {...} block in case the model adds surrounding text
-      const jsonMatch = clean.match(/\{[\s\S]*\}/);
-      if (jsonMatch) clean = jsonMatch[0];
-      parsed = JSON.parse(clean);
-    } catch(e) {
-      // Last resort: try to salvage skill arrays via regex
-      const extract = (key) => { const m = data.raw.match(new RegExp('"'+key+'"\\s*:\\s*\\[([^\\]]*?)\\]')); if (!m) return []; return [...m[1].matchAll(/"([^"]+)"/g)].map(x=>x[1]); };
-      parsed = { technical: extract('technical'), languages: extract('languages'), tools: extract('tools'), soft: extract('soft'), domains: extract('domains'), experience_summary: '' };
-      if (!parsed.technical.length && !parsed.languages.length && !parsed.tools.length) {
-        console.error('CV parse Rohausgabe:', data.raw);
-        throw new Error('Konnte Skills nicht parsen – Rohausgabe: ' + data.raw.slice(0,120));
+    const reader = response.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let rawResult = null;
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream:true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) continue;
+        let d;
+        try { d = JSON.parse(trimmed.slice(5).trim()); } catch(e) { continue; }
+
+        if (d.step === 'extract') {
+          cvSt.textContent = '📄 ' + (d.msg||'');
+          cvTxt.textContent = d.msg||'';
+          cvFill.style.width = '15%';
+        } else if (d.step === 'model') {
+          cvSt.textContent = '🤖 ' + (d.msg||'');
+          cvTxt.textContent = d.msg||'';
+          cvFill.style.width = '20%';
+        } else if (d.step === 'generating') {
+          cvSt.textContent = '⚙️ ' + (d.msg||'');
+          cvTxt.textContent = d.msg||'';
+          // Progress bar: tokens up to ~1200 = 20%→90%
+          const pct = Math.min(90, 20 + Math.round(((d.tokens||0)/1200)*70));
+          cvFill.style.width = pct + '%';
+        } else if (d.step === 'done') {
+          rawResult = d.raw || '';
+          cvFill.style.width = '100%';
+        } else if (d.step === 'error') {
+          throw new Error(d.msg||'Analysefehler');
+        }
       }
     }
 
-    const all=[...(parsed.languages||[]),...(parsed.technical||[]),...(parsed.tools||[]),...(parsed.soft||[]),...(parsed.domains||[])];
-    all.forEach(s=>{cvSkills.add(s);skillSet.add(s);});
-    if (parsed.experience_summary&&!document.getElementById('pExp').value) document.getElementById('pExp').value=parsed.experience_summary;
+    if (!rawResult) throw new Error('Keine Antwort vom Server – bitte erneut versuchen.');
 
-    renderSkills();
-    cvSt.textContent=` ${all.length} Skills gefunden`;
-    cvTxt.textContent=`${all.length} Skills erkannt`;
+    let parsed;
+    try { parsed = parseCvRaw(rawResult); }
+    catch(e) {
+      parsed = parseCvFallback(rawResult);
+      if (!parsed.technical.length && !parsed.languages.length && !parsed.tools.length) {
+        console.error('CV parse Rohausgabe:', rawResult);
+        throw new Error('Konnte Skills nicht parsen – Rohausgabe: ' + rawResult.slice(0,120));
+      }
+    }
+
+    const all = applyCvParsed(parsed);
+    const projCount = cvProjects.size;
+    cvSt.textContent = `✅ ${all.length} Skills, ${projCount} Projekte gefunden`;
+    cvTxt.textContent = `${all.length} Skills & ${projCount} Projekte erkannt`;
     setTimeout(()=>{cvProg.style.display='none';cvSt.style.display='none';},3000);
-    toast(` ${all.length} Skills aus Lebenslauf extrahiert!`);
+    toast(`✅ ${all.length} Skills & ${projCount} Projekte aus Lebenslauf extrahiert!`);
   } catch(e) {
-    clearInterval(iv); clearInterval(timerIv); cvProg.style.display='none'; cvSt.style.display='none';
-    toast(' '+e.message.slice(0,80));
+    cvProg.style.display='none'; cvSt.style.display='none';
+    toast('❌ '+e.message.slice(0,100));
   }
 }
 
@@ -1259,13 +1389,15 @@ async function loadProfile() {
     if(p.salaryMax) document.getElementById('pSalaryMax').value = p.salaryMax;
     if(p.skills){p.skills.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>skillSet.add(s));}
     if(p.cvSkills){p.cvSkills.forEach(s=>{cvSkills.add(s);skillSet.add(s);});}
+    if(p.cvProjects){p.cvProjects.forEach(pr=>{if(pr&&pr.trim())cvProjects.add(pr.trim());});}
     renderSkills();
+    renderProjects();
     // Restore CV label from uploaded files
     try {
       const { files } = await api('/api/files','GET');
       const cvFile = files && (files.find(f=>/lebenslauf|cv|resume/i.test(f.name)) || files.find(f=>/\.pdf$/i.test(f.name)));
       if (cvFile) {
-        document.getElementById('cvLabel').innerHTML=`<div style="font-size:24px;margin-bottom:4px"></div><div style="color:var(--a)">${cvFile.name}</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Tippen zum Ändern</div>`;
+        setCvLabelLoaded(cvFile.name);
       }
     } catch(e) {}
     // Toggles
@@ -1305,6 +1437,7 @@ async function saveProfile() {
     salaryMax: parseInt(document.getElementById('pSalaryMax').value)||null,
     skills:[...skillSet].join(', '),
     cvSkills:[...cvSkills],
+    cvProjects:[...cvProjects],
     want_remote:document.getElementById('togRemote').classList.contains('on'),
     want_local:document.getElementById('togLocal').classList.contains('on'),
     want_car:document.getElementById('togCar').classList.contains('on'),
@@ -1449,12 +1582,115 @@ function toggleAIMode() {
   if (aiMode === 'ollama') loadOllamaStatus();
 }
 
+// Installed models cache (populated by loadOllamaStatus)
+let _installedModels = [];
+let _pendingPullModel = '';
+let _pendingPullField = '';
+
+function onModelDropdownChange(fieldId, value) {
+  // Custom input
+  const customInput = document.getElementById('ollamaModelCustom');
+  if (fieldId === 'ollamaModel' && customInput) {
+    customInput.style.display = value === 'custom' ? 'block' : 'none';
+  }
+  if (!value || value === 'custom' || value === '') return;
+  const banner = document.getElementById('ollamaPullBanner');
+  const msg = document.getElementById('ollamaPullMsg');
+  const btn = document.getElementById('ollamaPullBtn');
+  if (!banner || !msg) return;
+  // Check if already installed
+  const installed = _installedModels.some(m => m === value || m.startsWith(value.split(':')[0]));
+  if (installed) {
+    banner.style.display = 'none';
+    // Save immediately
+    const configKey = fieldId === 'ollamaModel' ? 'ollamaModel' : fieldId === 'ollamaVisionModel' ? 'ollamaVisionModel' : 'ollamaLetterModel';
+    api('/api/config','POST',{[configKey]: value}).catch(()=>{});
+    return;
+  }
+  _pendingPullModel = value;
+  _pendingPullField = fieldId;
+  msg.textContent = `"${value}" ist nicht installiert – herunterladen?`;
+  document.getElementById('ollamaPullBarWrap').style.display = 'none';
+  document.getElementById('ollamaPullBarFill').style.width = '0%';
+  document.getElementById('ollamaPullDetail').textContent = '';
+  if (btn) { btn.disabled = false; btn.textContent = '↓ Herunterladen'; }
+  banner.style.display = 'block';
+}
+
+async function pullOllamaModel() {
+  const model = _pendingPullModel;
+  if (!model) return;
+  const banner = document.getElementById('ollamaPullBanner');
+  const msg = document.getElementById('ollamaPullMsg');
+  const btn = document.getElementById('ollamaPullBtn');
+  const barWrap = document.getElementById('ollamaPullBarWrap');
+  const barFill = document.getElementById('ollamaPullBarFill');
+  const detail = document.getElementById('ollamaPullDetail');
+  btn.disabled = true;
+  btn.textContent = 'Lädt...';
+  barWrap.style.display = 'block';
+  msg.textContent = `Lade ${model} herunter...`;
+  detail.textContent = 'Verbinde mit Ollama...';
+  const sep = BASE.includes('?') ? '&' : '?';
+  const url = BASE + '/api/ollama-pull' + (authToken ? sep+'token='+encodeURIComponent(authToken) : '');
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    });
+    const reader = response.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) continue;
+        try {
+          const d = JSON.parse(trimmed.slice(5).trim());
+          if (d.pct !== undefined) {
+            barFill.style.width = d.pct + '%';
+            const mb = d.completed ? (d.completed/1024/1024).toFixed(0)+' MB / '+(d.total/1024/1024).toFixed(0)+' MB' : '';
+            detail.textContent = (d.message||'') + (mb ? ' · ' + mb : '') + ' · ' + d.pct + '%';
+            msg.textContent = `Lade ${model}...`;
+          } else if (d.status === 'success') {
+            barFill.style.width = '100%';
+            msg.innerHTML = `<span style="color:var(--a3)">✓ ${model} erfolgreich installiert!</span>`;
+            detail.textContent = '';
+            btn.textContent = '✓ Fertig';
+            _installedModels.push(model);
+            // Save config
+            const configKey = _pendingPullField === 'ollamaModel' ? 'ollamaModel' : _pendingPullField === 'ollamaVisionModel' ? 'ollamaVisionModel' : 'ollamaLetterModel';
+            api('/api/config','POST',{[configKey]: model}).catch(()=>{});
+            setTimeout(() => { banner.style.display = 'none'; loadOllamaStatus(); }, 2500);
+          } else if (d.status === 'error') {
+            msg.innerHTML = `<span style="color:#f87171">✗ Fehler: ${d.message}</span>`;
+            btn.disabled = false; btn.textContent = '↓ Erneut versuchen';
+            detail.textContent = '';
+          } else if (d.message) {
+            detail.textContent = d.message;
+          }
+        } catch(e) {}
+      }
+    }
+  } catch(e) {
+    msg.innerHTML = `<span style="color:#f87171">✗ ${e.message}</span>`;
+    btn.disabled = false; btn.textContent = '↓ Erneut versuchen';
+  }
+}
+
 async function loadOllamaStatus() {
   const el = document.getElementById('ollamaStatus');
   el.textContent = 'Verbinde mit Ollama...';
   try {
     const d = await api('/api/ollama-status');
     if (d.running) {
+      _installedModels = d.models || [];
       const modelList = d.models.length ? d.models.join(', ') : 'Keine Modelle gefunden';
       el.innerHTML = `<span style="color:var(--a)"> Ollama läuft</span><br/>Installierte Modelle: <span style="color:var(--a4)">${modelList}</span><br/>Aktives Modell: <strong style="color:var(--a)">${d.currentModel}</strong>`;
       // Auto-select matching model in dropdown
@@ -1525,7 +1761,7 @@ async function testOllama() {
   btn.disabled = true; btn.textContent = ' Teste...';
   res.style.display = 'none';
   // Save current model selection first
-  let ollamaModel = document.getElementById('ollamaModel')?.value || 'llama3.1:70b-instruct-q4_K_M';
+  let ollamaModel = document.getElementById('ollamaModel')?.value || 'qwen3.6:27b';
   if (ollamaModel === 'custom') ollamaModel = document.getElementById('ollamaModelCustom').value || ollamaModel;
   await api('/api/config','POST',{ollamaModel}).catch(()=>{});
   try {
@@ -1687,7 +1923,7 @@ async function saveSettings(){
     }
     toast(' Gespeichert');
     loadServerStatus();
-    if (aiMode === 'ollama') loadOllamaStatus();
+    if (aiMode === 'ollama') testOllama();
   } catch(e) { toast(' Server nicht erreichbar'); }
 }
 
@@ -2159,13 +2395,26 @@ async function startApp() {
     setTimeout(() => autoApply(_autoParam, true), 400);
   }
   setInterval(loadJobs,60000);
-  // Background scan-status poller – updates badge without re-rendering job list
-  setInterval(async()=>{
+  // Sync aiMode + scan badge on startup and every 10s
+  const syncStatus = async () => {
     try {
       const st = await api('/api/status');
       updateScanBadge(st);
+      if (st.aiMode && st.aiMode !== aiMode) {
+        aiMode = st.aiMode;
+        const tog = document.getElementById('togAI');
+        if (st.aiMode === 'anthropic' && !tog.classList.contains('on')) tog.classList.add('on');
+        if (st.aiMode === 'ollama' && tog.classList.contains('on')) tog.classList.remove('on');
+        document.getElementById('aiModeLabel').textContent = st.aiMode === 'anthropic' ? 'Anthropic API (Cloud)' : 'Ollama (Lokal · kostenlos)';
+        document.getElementById('anthropicSec').style.display = st.aiMode === 'anthropic' ? 'block' : 'none';
+        document.getElementById('ollamaSec').style.display = st.aiMode === 'ollama' ? 'block' : 'none';
+      }
     } catch(e){}
-  }, 10000);
+  };
+  syncStatus();
+  setInterval(syncStatus, 10000);
+  // Auto-test Ollama on startup if in Ollama mode
+  try { const st = await api('/api/status'); if (st.aiMode === 'ollama') setTimeout(testOllama, 1500); } catch(e) {}
 }
 
 function updateScanBadge(data) {
@@ -2204,6 +2453,20 @@ init();
       <img id="autoScreenImg" style="width:100%;border-radius:8px;border:1px solid var(--bd);cursor:zoom-in" onclick="this.style.width=this.style.width==='100%'?'auto':'100%'" alt="Browser Screenshot"/>
       <div id="autoVisionDebug" style="display:none;margin-top:6px;background:rgba(74,50,120,.15);border:1px solid rgba(74,50,120,.25);border-radius:6px;padding:8px 10px;font-size:10px;font-family:'DM Mono',monospace;color:#b89ae8;word-break:break-word;white-space:pre-wrap;max-height:120px;overflow-y:auto"></div>
     </div>
+    <!-- Anschreiben-Panel -->
+    <div id="autoLetterPanel" style="display:none;background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd)">
+        <span style="font-size:11px;color:var(--mu2)">Generiertes Anschreiben</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="copyLetter()" style="background:rgba(212,132,90,.1);border:1px solid rgba(212,132,90,.2);border-radius:6px;padding:4px 10px;color:var(--a);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">Kopieren</button>
+          <button id="autoLetterPdfBtn" onclick="downloadAutoLetterPdf()" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:4px 10px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">PDF</button>
+          <button id="autoLetterToggle" onclick="toggleLetter()" style="background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">verbergen</button>
+        </div>
+      </div>
+      <div id="autoLetterBody" style="display:block">
+        <pre id="autoLetterText" style="padding:12px 14px;font-size:11px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--tx);font-family:'DM Mono',monospace;margin:0"></pre>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <button id="autoSubmitBtn" onclick="autoSubmit()" style="display:none;flex:2;background:var(--a);border:none;border-radius:6px;padding:13px;color:#fff;font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">Jetzt absenden</button>
       <button id="autoContinueBtn" onclick="autoContinue()" style="display:none;flex:2;background:rgba(176,125,158,.15);border:1px solid rgba(176,125,158,.4);border-radius:6px;padding:13px;color:var(--a4);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;font-weight:700">Fortsetzen</button>
@@ -2219,20 +2482,6 @@ init();
     <!-- Mic level meter -->
     <div id="autoVoiceMeter" style="height:3px;background:var(--s2);border-radius:2px;margin-bottom:8px;overflow:hidden">
       <div id="autoVoiceLevel" style="height:100%;width:0;background:var(--a4);border-radius:2px;transition:width .08s"></div>
-    </div>
-    <!-- Anschreiben-Panel -->
-    <div id="autoLetterPanel" style="display:none;background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;overflow:hidden">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd)">
-        <span style="font-size:11px;color:var(--mu2)">Generiertes Anschreiben</span>
-        <div style="display:flex;gap:6px">
-          <button onclick="copyLetter()" style="background:rgba(212,132,90,.1);border:1px solid rgba(212,132,90,.2);border-radius:6px;padding:4px 10px;color:var(--a);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">Kopieren</button>
-          <button id="autoLetterPdfBtn" onclick="downloadAutoLetterPdf()" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:6px;padding:4px 10px;color:var(--a2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">PDF</button>
-          <button id="autoLetterToggle" onclick="toggleLetter()" style="background:none;border:none;color:var(--mu2);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer">verbergen</button>
-        </div>
-      </div>
-      <div id="autoLetterBody" style="display:block">
-        <pre id="autoLetterText" style="padding:12px 14px;font-size:11px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--tx);font-family:'DM Mono',monospace;margin:0"></pre>
-      </div>
     </div>
     <div style="font-size:10px;color:var(--mu);text-align:center;line-height:1.6;padding:0 10px">
       Der Browser ist sichtbar auf deinem Desktop · Du kannst dort alles prüfen und manuell anpassen
