@@ -192,9 +192,9 @@ function updateJob(id, fields) {
 
 function loadProfile() {
   const rows = db.prepare('SELECT key,value FROM profile').all();
-  const p = { name:'', email:'', phone:'', street:'', zip:'', skills:'', experience:'', bio:'', location:'', languages:'', bachelorFach:'', bachelorNote:'', hochschule:'', abschlussjahr:'', cvSkills:[], want_remote:true, want_local:true, want_car:true, radius_km:10, radius_car_km:50, salary:null, salaryMin:null, salaryMax:null };
+  const p = { name:'', email:'', phone:'', street:'', zip:'', skills:'', experience:'', bio:'', location:'', languages:'', bachelorFach:'', bachelorNote:'', hochschule:'', abschlussjahr:'', cvSkills:[], cvProjects:[], want_remote:true, want_local:true, want_car:true, radius_km:10, radius_car_km:50, salary:null, salaryMin:null, salaryMax:null };
   for (const { key, value } of rows) {
-    if (key==='cvSkills') { try { p.cvSkills=JSON.parse(value); } catch(e) {} }
+    if (key==='cvSkills' || key==='cvProjects') { try { p[key]=JSON.parse(value); } catch(e) {} }
     else if (['want_remote','want_local','want_car'].includes(key)) p[key] = value==='true';
     else if (['radius_km','radius_car_km','salary','salaryMin','salaryMax'].includes(key)) p[key] = parseInt(value)||null;
     else p[key] = value;
@@ -752,29 +752,78 @@ function escHtml(s) {
 async function generateLetterPDF(letter, profile, job) {
   const pp = getPuppeteer();
   const pdfPath = path.join(UPLOADS_DIR, `_anschreiben_${Date.now()}.pdf`);
+  const accent = '#1e1b2e';
+  const isDE = /\b(ich|mich|meine|haben|habe|bin|bei|und|oder|mit|auf|für|sich|dass|ist|wird|werden)\b/i.test(letter);
+  const badgeText = isDE ? 'Anschreiben' : 'Cover<br>Letter';
+
+  // Split name into first / last
+  const nameParts = (profile.name||'Bewerber').trim().split(/\s+/);
+  const firstName = nameParts.length > 1 ? nameParts[0] : '';
+  const lastName  = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0];
+
+  // First non-empty line = subject line, rest = body
+  const lines = letter.split('\n');
+  const firstIdx = lines.findIndex(l => l.trim());
+  const subjectLine = firstIdx >= 0 ? escHtml(lines[firstIdx].trim()) : '';
+  const bodyLines = lines.slice(firstIdx + 1);
+
+  const bodyParagraphs = bodyLines
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .map(l => `<p>${escHtml(l).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>')}</p>`)
+    .join('\n');
+
+  const dateStr = new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
+  const jobTitle = escHtml(job.title || '');
+
   const html = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><style>
-    *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.65;margin:0;padding:0;color:#1a1a1a}
-    .page{padding:2.5cm 2.5cm 2cm 2.5cm}.addr{margin-bottom:2em}.name{font-weight:700;font-size:12pt}
-    .date{text-align:right;color:#555;margin-bottom:1.8em;font-size:10pt}
-    .subject{font-weight:700;margin-bottom:1.5em;font-size:11.5pt}
-    p{margin:0 0 0.9em 0;text-align:justify}
-  </style></head><body><div class="page">
-    <div class="addr">
-      <div class="name">${escHtml(profile.name||'')}</div>
-      <div>${escHtml(profile.location||'')}</div>
-      <div>${escHtml(profile.phone||'')}</div>
-      <div>${escHtml(profile.email||'')}</div>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10.5pt;color:#1a1a1a;background:#fff}
+    .header{display:flex;align-items:flex-start;padding:1.5cm 1.8cm 1cm 1.8cm;gap:18px}
+    .badge{background:${accent};color:#fff;font-size:7.5pt;font-weight:700;letter-spacing:.5px;
+           padding:8px 7px;line-height:1.4;text-align:center;flex-shrink:0;min-width:46px;border-radius:2px}
+    .name-first{font-size:26pt;font-weight:300;line-height:1;color:#1a1a1a}
+    .name-last{font-size:26pt;font-weight:800;line-height:1;margin-bottom:9px;color:#1a1a1a}
+    .title-pill{display:inline-flex;align-items:center;gap:6px;border:1.5px solid ${accent};
+                border-radius:20px;padding:3px 13px;font-size:7.5pt;font-weight:700;
+                color:${accent};letter-spacing:1.2px;text-transform:uppercase}
+    .title-pill::after{content:'\\2022';font-size:10pt}
+    .divider{height:1px;background:#d8d8d8}
+    .body{padding:.9cm 1.8cm 2.8cm 1.8cm;line-height:1.65}
+    .date{text-align:right;color:#555;font-size:9pt;margin-bottom:1.1em}
+    .subject{font-weight:700;font-size:10.5pt;margin-bottom:1.2em}
+    p{margin:0 0 .8em 0;text-align:justify}
+    .footer{position:fixed;bottom:0;left:0;right:0;background:${accent};color:#fff;
+            padding:8px 1.8cm;font-size:8pt;display:flex;justify-content:space-between;align-items:center}
+  </style></head><body>
+  <div class="header">
+    <div class="badge">${badgeText}</div>
+    <div>
+      ${firstName ? `<div class="name-first">${escHtml(firstName)}</div>` : ''}
+      <div class="name-last">${escHtml(lastName)}</div>
+      ${jobTitle ? `<div class="title-pill">${jobTitle}</div>` : ''}
     </div>
-    <div class="date">${new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})}</div>
-    ${letter.split('\n').filter(l=>l.trim()).map(l=>{const h=escHtml(l).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>');return `<p>${h}</p>`;}).join('\n')}
-  </div></body></html>`;
+  </div>
+  <div class="divider"></div>
+  <div class="body">
+    <div class="date">${dateStr}</div>
+    ${subjectLine ? `<div class="subject">${subjectLine}</div>` : ''}
+    ${bodyParagraphs}
+  </div>
+  <div class="footer">
+    <span>${escHtml(profile.email||'')}</span>
+    <span>${escHtml(profile.phone||'')}</span>
+    <span>${escHtml(profile.location||'')}</span>
+  </div>
+  </body></html>`;
+
   let b2 = null;
   try {
     b2 = await pp.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] });
     const p2 = await b2.newPage();
     await p2.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
-    await p2.pdf({ path: pdfPath, format: 'A4', printBackground: false,
-      margin: { top:'2.5cm', bottom:'2cm', left:'2.5cm', right:'2.5cm' } });
+    await p2.pdf({ path: pdfPath, format: 'A4', printBackground: true,
+      margin: { top:'0', bottom:'0', left:'0', right:'0' } });
     return pdfPath;
   } finally { if (b2) await b2.close().catch(()=>{}); }
 }
@@ -1048,8 +1097,8 @@ Output ONLY a JSON object (no markdown, no explanation):
 IMPORTANT: Use EXACT text from PAGE CONTENT for target field.
 /no_think`;
 
-      // qwen3/thinking models output <think>...</think> before JSON — strip it, allow enough tokens
-      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600);
+      // think:false = qwen3 darf NICHT intern denken – sonst verbraucht es alle 600 Tokens für <think> und gibt kein JSON aus
+      const jsonRaw = await callOllama([{role:'user', content: decisionPrompt}], 600, null, { think: false });
       const jsonText = jsonRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       console.log('[VisionAI] Entscheidung:', jsonText.slice(0,200));
       const m = jsonText.match(/\{[\s\S]*?\}/);
@@ -1966,7 +2015,7 @@ async function callAnthropic(messages, maxTokens=1000, label='callAnthropic', mo
   return d.content?.map(b => b.text||'').join('') || '';
 }
 
-async function callOllama(messages, maxTokens=1000, modelOverride=null) {
+async function callOllama(messages, maxTokens=1000, modelOverride=null, extraBody={}) {
   // Flatten any multipart messages (PDFs not supported in Ollama – text only)
   const flatMessages = messages.map(m => ({
     role: m.role,
@@ -1988,6 +2037,7 @@ async function callOllama(messages, maxTokens=1000, modelOverride=null) {
       messages: flatMessages,
       stream: false,
       options: { num_predict: maxTokens, temperature: 0.75 },
+      ...extraBody,
     }),
   });
   const d = JSON.parse(res.body);
@@ -2036,20 +2086,27 @@ async function checkOllamaStatus() {
   }
 }
 
-async function generateCoverLetter(job, profile, lang) {
+async function generateCoverLetter(job, profile, lang, feedback=null) {
   if (!lang) lang = detectLanguage((job.title||'')+' '+(job.desc||''));
   const eduDE = [
     profile.bachelorFach ? `Studiengang: ${profile.bachelorFach}` : '',
     profile.bachelorNote ? `Note: ${profile.bachelorNote}` : '',
     profile.hochschule   ? `Hochschule: ${profile.hochschule}` : '',
-    profile.abschlussjahr? `Abschluss: ${profile.abschlussjahr}` : '',
+    profile.abschlussjahr? `Abschluss: ${profile.abschlussjahr} (ABGESCHLOSSEN – Bewerber hat den Abschluss bereits)` : '',
   ].filter(Boolean).join(', ');
   const eduEN = [
     profile.bachelorFach ? `Degree: ${profile.bachelorFach}` : '',
     profile.bachelorNote ? `Grade: ${profile.bachelorNote}` : '',
     profile.hochschule   ? `University: ${profile.hochschule}` : '',
-    profile.abschlussjahr? `Graduated: ${profile.abschlussjahr}` : '',
+    profile.abschlussjahr? `Graduated: ${profile.abschlussjahr} (COMPLETED – degree already obtained)` : '',
   ].filter(Boolean).join(', ');
+  // IMPORTANT hint for prompt to avoid future-tense graduation mistake
+  const graduationHint = profile.abschlussjahr
+    ? `\nKRITISCH: Der Bewerber hat den Abschluss bereits ${profile.abschlussjahr} abgeschlossen. NIEMALS schreiben „werde abschließen“ oder „werde meinen Abschluss machen“ – immer Vergangenheit/Gegenwart verwenden: „habe abgeschlossen“, „schloß ab“.`
+    : '';
+  // Format CV skills and projects for context
+  const cvSkillsStr = (profile.cvSkills||[]).length ? (profile.cvSkills||[]).map(s => typeof s==='object' ? `${s.name||s.skill||''} (${s.level||s.years||''})`.trim() : s).filter(Boolean).slice(0,20).join(', ') : '';
+  const cvProjectsStr = (profile.cvProjects||[]).length ? (profile.cvProjects||[]).map(p2 => typeof p2==='object' ? `${p2.name||p2.title||''}: ${p2.description||p2.desc||''}`.trim() : p2).filter(Boolean).slice(0,5).join(' | ') : '';
   let prompt;
   if (lang === 'en') {
     prompt = `Write a professional job application cover letter. IMPORTANT: human, personal, direct tone. No AI clichï¿½s like "I am excited to apply" or "I am writing to express my interest". Modern, authentic, concise.
@@ -2061,9 +2118,10 @@ Keywords: ${(job.keywords||[]).join(', ')}
 
 Applicant:
 Name: ${profile.name||'Applicant'}
-Skills: ${profile.skills||'Software Development'}
+Skills: ${profile.skills||'Software Development'}${cvSkillsStr ? '\nCV Skills: '+cvSkillsStr : ''}
 Experience: ${profile.experience||'Career changer'}
 ${eduEN ? 'Education: '+eduEN : ''}
+${cvProjectsStr ? 'Projects (from CV): '+cvProjectsStr : ''}
 ${profile.languages ? 'Languages: '+profile.languages : ''}
 ${profile.bio?'About me: '+profile.bio:''}
 
@@ -2072,9 +2130,23 @@ Line 1: "Re: Application ï¿½ ${job.title}" (or a natural English subject line
 Line 2: (blank)
 Line 3+: Body text starting with salutation like "Dear Hiring Team," or "Hello,"
 
-~270 words total (subject not counted). Naturally include keywords: ${(job.keywords||[]).slice(0,3).join(', ')}. NO headings, NO markdown, NO asterisks, NO ** markers, NO em dashes (ï¿½), NO en dashes (ï¿½).`;
+~270 words total (subject not counted). Naturally include keywords: ${(job.keywords||[]).slice(0,3).join(', ')}. NO headings, NO markdown, NO asterisks, NO ** markers, NO em dashes (ï¿½), NO en dashes (ï¿½).${feedback ? `\n\nFEEDBACK ON LAST VERSION – please apply specifically: ${feedback}` : ''}`;
   } else {
-    prompt = `Du schreibst ein Bewerbungsanschreiben. WICHTIG: menschlich, persï¿½nlich, direkt. Kein KI-Stil, keine Floskeln wie "Mit groï¿½em Interesse bewerbe ich mich". Zeitgemï¿½ï¿½, authentisch.
+    prompt = `Du bist ein deutschsprachiger Bewerbungsexperte. Schreibe ein Anschreiben, das sich anfühlt als hätte es ein Mensch auf Deutsch geschrieben – nicht als wäre es aus dem Englischen übersetzt.
+
+VERBOTEN (typische Übersetzungs-Floskeln aus dem Englischen):
+- "Ich schreibe dir/Ihnen, weil..." (= "I am writing to you because")
+- "Ich bewerbe mich hiermit" / "Mit großem Interesse bewerbe ich mich"
+- "Ich bin begeistert von der Möglichkeit" (= "I am excited about the opportunity")
+- "Ich glaube, dass ich ein guter Kandidat bin" (= "I believe I would be a great fit")
+- Jeder Einstieg der auf Englisch "I am writing to..." entspricht
+${graduationHint}
+
+STATTDESSEN – so klingt echtes Deutsch:
+- Direkt mit dem Inhalt einsteigen: "Was mich an ${job.company} reizt: ..."
+- Oder eine konkrete Verbindung zur Stelle: "${job.title} – genau das, womit ich mich seit Jahren beschäftige."
+- Oder eine direkte Aussage: "Fullstack, TypeScript, und ein Team das liefert – das kenne ich, das suche ich."
+- Der erste Satz darf ruhig unkonventionell sein, solange er echt klingt.
 
 Stelle: ${job.title} bei ${job.company}
 Ort: ${job.location}
@@ -2083,22 +2155,30 @@ Keywords: ${(job.keywords||[]).join(', ')}
 
 Bewerber:
 Name: ${profile.name||'Bewerber'}
-Skills: ${profile.skills||'Softwareentwicklung'}
+Skills: ${profile.skills||'Softwareentwicklung'}${cvSkillsStr ? '\nCV-Skills: '+cvSkillsStr : ''}
 Erfahrung: ${profile.experience||'Quereinsteiger'}
 ${eduDE ? 'Ausbildung: '+eduDE : ''}
+${cvProjectsStr ? 'Projekte (aus CV): '+cvProjectsStr : ''}
 ${profile.languages ? 'Sprachen: '+profile.languages : ''}
-${profile.bio?'ï¿½ber mich: '+profile.bio:''}
+${profile.bio?'Über mich: '+profile.bio:''}
 
-FORMAT ï¿½ gib genau das aus, nichts anderes und mache Zeile 1 bitte bold:
-Zeile 1: "Bewerbung als ${job.title}" (oder eine natï¿½rliche Betreff-Variation)
+FORMAT – gib genau das aus, nichts anderes, und mache Zeile 1 bold:
+Zeile 1: "Bewerbung als ${job.title}" (oder eine natürliche Betreff-Variation)
 Zeile 2: (leer)
 Zeile 3+: Brieftext beginnend mit Anrede wie "Hallo," oder "Sehr geehrte Damen und Herren,"
 
-~270 Wï¿½rter (Betreff nicht mitgezï¿½hlt). Keywords ${(job.keywords||[]).slice(0,3).join(', ')} natï¿½rlich einbauen. KEINE ï¿½berschriften, KEIN Markdown, KEINE Sternchen, KEINE ** Zeichen, KEINE Em-Dashes (ï¿½), KEINE En-Dashes (ï¿½).`;
+~270 Wörter (Betreff nicht mitgezählt). Keywords ${(job.keywords||[]).slice(0,3).join(', ')} natürlich einbauen. KEINE Überschriften, KEIN Markdown, KEINE Sternchen, KEINE ** Zeichen, KEINE Em-Dashes, KEINE En-Dashes.${feedback ? `\n\nFEEDBACK ZUR LETZTEN VERSION – bitte gezielt umsetzen: ${feedback}` : ''}`;
   }
-  const raw = CONFIG.AI_MODE === 'ollama'
-    ? (await callOllama([{ role: 'user', content: prompt }], 1200, CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL)).replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
-    : await callAnthropic([{ role: 'user', content: prompt }], 1200, 'Anschreiben', MODELS.coverLetter);
+  let raw;
+  if (CONFIG.AI_MODE === 'ollama') {
+    // think:false – Ollama mit think:true verbraucht alle num_predict-Tokens für Thinking und liefert leeren content zurück.
+    // Qualität ist für strukturierte Aufgaben (Anschreiben nach Vorlage) mit think:false ausreichend.
+    const ollamaRaw = await callOllama([{ role: 'user', content: prompt }], 1200, CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL, { think: false });
+    // Strip any <think> blocks that slipped through anyway (older Ollama versions inline-thinking)
+    raw = ollamaRaw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim() || ollamaRaw.trim();
+  } else {
+    raw = await callAnthropic([{ role: 'user', content: prompt }], 1200, 'Anschreiben', MODELS.coverLetter);
+  }
   // Strip any markdown bold/italic markers and em dashes the AI added despite instructions
   return raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').replace(/\u2014/g, '-').replace(/\u2013/g, '-').trim();
 }
@@ -2403,16 +2483,16 @@ const server=http.createServer(async(req,res)=>{
     } catch(e) { return sendJSON(res,{error:e.message},500); }
   }
   if (pathname==='/api/coverletter'&&req.method==='POST') {
-    const {job}=await readBody(req);
+    const {job, feedback, nocache}=await readBody(req);
     try{
       const lang=detectLanguage((job.title||'')+' '+(job.desc||''));
-      // Return cached letter if available
-      if (job.id) {
+      // Return cached letter only on first load (not when explicitly regenerating)
+      if (job.id && !feedback && !nocache) {
         const cached = db.prepare('SELECT letter FROM jobs WHERE id=?').get(job.id);
         if (cached?.letter) return sendJSON(res,{letter:cached.letter,lang,cached:true});
       }
-      const letter = await generateCoverLetter(job,loadProfile(),lang);
-      // Cache for next time
+      const letter = await generateCoverLetter(job,loadProfile(),lang,feedback||null);
+      // Always update cache with latest generated letter
       if (job.id) { try { db.prepare('UPDATE jobs SET letter=? WHERE id=?').run(letter, job.id); } catch(e) {} }
       return sendJSON(res,{letter,lang});
     }
