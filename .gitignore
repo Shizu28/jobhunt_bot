@@ -3,6 +3,8 @@ node_modules/
 uploads/
 browser-profile/
 jobhunter.db
+jobhunter.db-shm
+jobhunter.db-wal
 *.pdf
 .env
 
