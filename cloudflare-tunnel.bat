@@ -1,5 +1,10 @@
 @echo off
 chcp 65001 >nul
+setlocal EnableExtensions
+
+set "TARGET_URL=http://localhost:11434"
+set "RESTART_DELAY=5"
+
 echo.
 echo ============================================================
 echo  Cloudflare Tunnel ^| Ollama -^> Internet
@@ -37,9 +42,19 @@ if %errorlevel% neq 0 (
 )
 
 echo [OK] Ollama laeuft.
-echo [OK] Starte Tunnel...
+echo [OK] Starte Tunnel mit Auto-Reconnect...
 echo.
 echo *** Die naechste URL kopieren und in Render OLLAMA_URL eintragen ***
+echo *** Wenn die Verbindung abbricht, startet der Tunnel automatisch neu ***
 echo.
 
-cloudflared tunnel --url http://localhost:11434
+:start_tunnel
+echo [%date% %time%] cloudflared startet...
+cloudflared tunnel --url %TARGET_URL% --no-autoupdate
+set "EXIT_CODE=%errorlevel%"
+
+echo.
+echo [WARN] Tunnel beendet (Exit Code: %EXIT_CODE%).
+echo [INFO] Neustart in %RESTART_DELAY%s. (Ctrl+C zum Beenden)
+timeout /t %RESTART_DELAY% /nobreak >nul
+goto start_tunnel

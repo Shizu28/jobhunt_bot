@@ -35,7 +35,7 @@ function listUploads() {
   } catch(e) { return []; }
 }
 
-const CONFIG = { PORT: process.env.PORT || 3000, ANTHROPIC_API_KEY: '', ACCESS_PIN: '', SCAN_INTERVAL_MINUTES: 60, AI_MODE: 'anthropic', OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'llama3.1:70b-instruct-q4_K_M', OLLAMA_VISION_MODEL: 'llava:latest', OLLAMA_LETTER_MODEL: '', SMTP_HOST: '', SMTP_PORT: 587, SMTP_USER: '', SMTP_PASS: '', USER_EMAIL: '' };
+const CONFIG = { PORT: process.env.PORT || 3000, ANTHROPIC_API_KEY: '', ACCESS_PIN: '', SCAN_INTERVAL_MINUTES: 60, AI_MODE: 'anthropic', OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'qwen3.5:4b', OLLAMA_VISION_MODEL: 'llava:latest', OLLAMA_LETTER_MODEL: 'qwen3.5:4b', SMTP_HOST: '', SMTP_PORT: 587, SMTP_USER: '', SMTP_PASS: '', USER_EMAIL: '' };
 
 // -- MODELL-ZUWEISUNG PRO AUFGABE --------------------------------------
 // haiku:  $0.80/$4.00  per 1M tokens  ï¿½ schnell, gï¿½nstig, gut fï¿½r strukturierte Aufgaben

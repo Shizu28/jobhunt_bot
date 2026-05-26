@@ -25,15 +25,15 @@ services:
       #    Muss nach jedem Neustart des Tunnels aktualisiert werden (Quick Tunnel)
       #    → Dauerhaft: Named Tunnel mit fester Domain (siehe cloudflare-tunnel.bat)
       - key: OLLAMA_URL
-        sync: false        # <-- im Render-Dashboard manuell eintragen
+        value: https://spread-raid-showers-beverly.trycloudflare.com/
 
       # -- Ollama-Modelle --
       - key: OLLAMA_MODEL
-        value: llama3.1:8b
+        value: qwen3.5:4b
       - key: OLLAMA_VISION_MODEL
         value: llava:latest
       - key: OLLAMA_LETTER_MODEL
-        value: ""          # leer = wie OLLAMA_MODEL
+        value: qwen3.5:4b
 
       # -- Zugangs-PIN (schützt die App im Internet!) --
       - key: ACCESS_PIN
