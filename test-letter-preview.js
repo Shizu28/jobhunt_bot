@@ -46,12 +46,19 @@ function apiCall(method, path, body, token) {
 
   try {
     // ── 0. Login via API to get token and a valid job ID ──────────────────
-    console.log('[test] 1/6  API-Login...');
+    console.log('[test] 1/7  API-Login...');
     const loginRes = await apiCall('POST', '/api/auth/login', { pin: PIN });
     const token = loginRes.token;
     if (!token) throw new Error('Login fehlgeschlagen: ' + JSON.stringify(loginRes));
 
-    console.log('[test] 2/6  Jobs laden...');
+    console.log('[test] 2/7  Test-Modelle setzen...');
+    await apiCall('POST', '/api/config', {
+      aiMode: 'ollama',
+      ollamaModel: 'qwen3.5:4b',
+      ollamaLetterModel: 'qwen3.5:4b',
+    }, token);
+
+    console.log('[test] 3/7  Jobs laden...');
     const jobsRes = await apiCall('GET', '/api/jobs', null, token);
     const jobs = Array.isArray(jobsRes) ? jobsRes : (jobsRes.jobs || []);
     if (jobs.length === 0) throw new Error('Keine Jobs in der Datenbank');
@@ -64,13 +71,13 @@ function apiCall(method, path, body, token) {
     console.log(`[test]       Job: ${job.title} · ${job.company} (id=${job.id})`);
 
     // ── 1. Browser starten ────────────────────────────────────────────────
-    console.log('[test] 3/6  Browser starten...');
+    console.log('[test] 4/7  Browser starten...');
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
 
     // ── 2. Login via UI ───────────────────────────────────────────────────
-    console.log('[test] 4/6  UI-Login...');
+    console.log('[test] 5/7  UI-Login...');
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#authPinInput', { state: 'visible', timeout: 10_000 });
     await page.fill('#authPinInput', PIN);
@@ -87,7 +94,7 @@ function apiCall(method, path, body, token) {
     console.log('[test]       Eingeloggt, Jobs sichtbar');
 
     // ── 3. Direkt zu /?auto=<jobId> navigieren ────────────────────────────
-    console.log('[test] 5/6  Auto-Apply starten...');
+    console.log('[test] 6/7  Auto-Apply starten...');
     const autoUrl = `${BASE}/?auto=${encodeURIComponent(job.id)}`;
     await page.goto(autoUrl, { waitUntil: 'domcontentloaded' });
 
@@ -110,7 +117,7 @@ function apiCall(method, path, body, token) {
     await page.waitForTimeout(4_000);
 
     // ── 5. Preview prüfen ─────────────────────────────────────────────────
-    console.log('[test] 6/6  Preview prüfen...');
+    console.log('[test] 7/7  Preview prüfen...');
     const letterText = await page.$eval('#autoLetterText', el => el.textContent.trim());
 
     const isLoading  = letterText.includes('Anschreiben wird generiert');

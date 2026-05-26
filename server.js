@@ -23,7 +23,9 @@ const FILES = {
   env:     path.join(__dirname, '.env'),
 };
 
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 function listUploads() {
   try {
@@ -33,7 +35,7 @@ function listUploads() {
   } catch(e) { return []; }
 }
 
-const CONFIG = { PORT: process.env.PORT || 3000, ANTHROPIC_API_KEY: '', ACCESS_PIN: '', SCAN_INTERVAL_MINUTES: 60, AI_MODE: 'anthropic', OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'llama3.1:70b-instruct-q4_K_M', OLLAMA_VISION_MODEL: 'llava:latest', OLLAMA_LETTER_MODEL: '', SMTP_HOST: '', SMTP_PORT: 587, SMTP_USER: '', SMTP_PASS: '', USER_EMAIL: '' };
+const CONFIG = { PORT: process.env.PORT || 3000, ANTHROPIC_API_KEY: '', ACCESS_PIN: '', SCAN_INTERVAL_MINUTES: 60, AI_MODE: 'anthropic', OLLAMA_URL: 'http://localhost:11434', OLLAMA_MODEL: 'qwen3.5:4b', OLLAMA_VISION_MODEL: 'llava:latest', OLLAMA_LETTER_MODEL: 'qwen3.5:4b', SMTP_HOST: '', SMTP_PORT: 587, SMTP_USER: '', SMTP_PASS: '', USER_EMAIL: '' };
 
 // -- MODELL-ZUWEISUNG PRO AUFGABE --------------------------------------
 // haiku:  $0.80/$4.00  per 1M tokens  ï¿½ schnell, gï¿½nstig, gut fï¿½r strukturierte Aufgaben
@@ -121,7 +123,7 @@ function checkAuth(req) {
 }
 
 // -- SQLITE DATABASE ------------------------------------------------------
-const db = new DatabaseSync(path.join(__dirname, 'jobhunter.db'));
+const db = new DatabaseSync(path.join(DATA_DIR, 'jobhunter.db'));
 db.exec(`
   PRAGMA journal_mode=WAL;
   PRAGMA synchronous=NORMAL;
@@ -2598,6 +2600,7 @@ const server=http.createServer(async(req,res)=>{
     let fullContent = '';
     let tokenCount = 0;
     let lastStatusAt = 0;
+    let doneSent = false;
     const startTs = Date.now();
 
     await new Promise((resolve) => {
@@ -2631,15 +2634,23 @@ const server=http.createServer(async(req,res)=>{
                 const skillsFound = (fullContent.match(/"[^"]{2,30}"/g)||[]).length;
                 sse({step:'generating', msg:`Analysiere... (${tokenCount} Tokens, ${elapsed}s) · ~${Math.max(0,skillsFound-10)} Skills erkannt`, tokens:tokenCount, elapsed});
               }
+              if (d.error) {
+                sse({step:'error', msg:`Ollama: ${d.error}. Prüfe OLLAMA_MODEL in den Einstellungen (aktuell: ${model})`});
+                doneSent = true; resolve();
+              }
               if (d.done) {
                 fullContent = fullContent.replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
-                sse({step:'done', raw:fullContent});
-                resolve();
+                if (fullContent) {
+                  sse({step:'done', raw:fullContent});
+                } else {
+                  sse({step:'error', msg:`Ollama-Modell '${model}' hat leere Antwort geliefert. Prüfe OLLAMA_MODEL in den Einstellungen.`});
+                }
+                doneSent = true; resolve();
               }
             } catch(e) {}
           }
         });
-        ollamaRes.on('end', () => resolve());
+        ollamaRes.on('end', () => { if (!doneSent) { sse({step:'error', msg:`Ollama hat den Stream unerwartet beendet. Prüfe, ob Modell '${model}' in Ollama verfügbar ist.`}); } resolve(); });
         ollamaRes.on('error', (e) => { sse({step:'error', msg:'Stream-Fehler: '+e.message}); resolve(); });
       });
       ollamaReq.on('error', (e) => { sse({step:'error', msg:'Ollama-Fehler: '+e.message}); resolve(); });

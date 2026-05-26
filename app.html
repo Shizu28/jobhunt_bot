@@ -483,6 +483,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
             <option value="qwen3.6:27b">Qwen3.6 27B – Vision + Tools + Thinking (empfohlen)</option>
             <option value="qwen3.6:35b">Qwen3.6 35B – noch stärker, langsamer</option>
             <option value="qwen3.5:27b">Qwen3.5 27B – Vision + Tools</option>
+            <option value="qwen3.5:4b">Qwen3.5 4B – sehr schnell, gut für Texte</option>
             <option value="qwen3-vl:8b">Qwen3-VL 8B – dediziertes Vision-Modell</option>
             <option value="qwen3-vl:32b">Qwen3-VL 32B – starkes Vision-Modell</option>
             <option value="mistral-small3.2:24b">Mistral Small 3.2 24B – Vision + Tools</option>
@@ -1185,6 +1186,7 @@ function removeProject(p){ cvProjects.delete(p); renderProjects(); }
 
 function setCvLabelLoaded(filename) {
   currentCVFile = filename;
+  localStorage.setItem('jh_cv_file', filename);
   const dlUrl = `${BASE}/uploads/${encodeURIComponent(filename)}${authToken?'?token='+encodeURIComponent(authToken):''}`;
   const safeJs = JSON.stringify(filename).replace(/"/g, '&quot;');
   const safeHtml = filename.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1196,6 +1198,7 @@ async function removeCV(filename) {
   if (!confirm(`Lebenslauf "${safeNameForConfirm}" entfernen?`)) return;
   await api('/api/files/'+encodeURIComponent(filename),'DELETE',null).catch(()=>{});
   currentCVFile = '';
+  localStorage.removeItem('jh_cv_file');
   document.getElementById('cvLabel').innerHTML = `<div style="font-size:24px;margin-bottom:4px">📄</div><div>PDF hochladen</div><div style="font-size:10px;margin-top:2px;color:var(--mu)">Skills &amp; Projekte werden automatisch erkannt</div>`;
   toast('✅ Lebenslauf entfernt');
 }
@@ -1402,7 +1405,11 @@ async function loadProfile() {
     // Restore CV label from uploaded files
     try {
       const { files } = await api('/api/files','GET');
-      const cvFile = files && (files.find(f=>/lebenslauf|cv|resume/i.test(f.name)) || files.find(f=>/\.pdf$/i.test(f.name)));
+      const savedCv = localStorage.getItem('jh_cv_file');
+      const cvFile = files && (
+        (savedCv && files.find(f => f.name === savedCv)) ||
+        files.find(f=>/lebenslauf|cv|resume/i.test(f.name))
+      );
       if (cvFile) {
         setCvLabelLoaded(cvFile.name);
       }
@@ -2458,14 +2465,16 @@ async function deleteFile(name) {
   loadFileList();
 }
 
+let _letterListExpanded = false;
 async function loadLetterList() {
   try {
     const { letters } = await api('/api/letters', 'GET');
     const el = document.getElementById('letterList');
     if (!el) return;
     if (!letters || !letters.length) { el.innerHTML = '<div style="font-size:11px;color:var(--mu2)">Noch keine generierten Anschreiben</div>'; return; }
-    el.innerHTML = letters.map(f => {
+    const renderLetterItems = (items) => items.map(f => {
       const dt = f.created ? new Date(f.created).toLocaleDateString('de-DE') : '';
+      const safeName = f.name.replace(/'/g,'\\\'');
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;margin-bottom:5px">
         <span style="font-size:11px;color:var(--mu2);flex-shrink:0">PDF</span>
         <div style="flex:1;min-width:0">
@@ -2473,9 +2482,20 @@ async function loadLetterList() {
           <div style="font-size:10px;color:var(--mu2)">${dt} · ${(f.size/1024).toFixed(0)} KB</div>
         </div>
         <a href="${BASE}/uploads/${encodeURIComponent(f.name)}${authToken?'?token='+encodeURIComponent(authToken):''}" download="${f.name}" style="background:rgba(212,132,90,.08);border:1px solid rgba(212,132,90,.15);border-radius:7px;padding:5px 9px;color:var(--a);font-size:11px;text-decoration:none;flex-shrink:0">↓</a>
-        <button onclick="deleteLetter('${f.name.replace(/'/g,'\\\'')}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0"></button>
+        <button onclick="deleteLetter('${safeName}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:7px;padding:5px 9px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0"></button>
       </div>`;
     }).join('');
+    const SHOW = 3;
+    if (letters.length <= SHOW) {
+      el.innerHTML = renderLetterItems(letters);
+    } else {
+      const shown = _letterListExpanded ? letters : letters.slice(0, SHOW);
+      const btnLabel = _letterListExpanded
+        ? `▲ Weniger anzeigen`
+        : `▼ Alle anzeigen (${letters.length})`;
+      el.innerHTML = renderLetterItems(shown)
+        + `<button onclick="_letterListExpanded=!_letterListExpanded;loadLetterList()" style="width:100%;margin-top:2px;background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:7px;padding:6px;color:var(--mu2);font-size:11px;cursor:pointer">${btnLabel}</button>`;
+    }
   } catch(e) {}
 }
 

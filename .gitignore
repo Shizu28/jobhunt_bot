@@ -1,4 +1,3 @@
-server.js
 node_modules/
 uploads/
 browser-profile/
@@ -7,4 +6,9 @@ jobhunter.db-shm
 jobhunter.db-wal
 *.pdf
 .env
+jobs.json
+profile.json
+search.json
+*.log
+npm-debug.log*
 
