@@ -3032,8 +3032,11 @@ function startScheduler(){console.log(`? Scan alle ${CONFIG.SCAN_INTERVAL_MINUTE
 
 function loadEnv(){
   try{
-    if(!fs.existsSync(FILES.env))return;
-    fs.readFileSync(FILES.env,'utf8').split('\n').forEach(line=>{const[k,...v]=line.split('=');if(k&&v.length)process.env[k.trim()]=v.join('=').trim();});
+    // Load .env file into process.env if it exists (local dev)
+    if(fs.existsSync(FILES.env)){
+      fs.readFileSync(FILES.env,'utf8').split('\n').forEach(line=>{const[k,...v]=line.split('=');if(k&&v.length)process.env[k.trim()]=v.join('=').trim();});
+    }
+    // Always apply process.env to CONFIG (covers both .env file and platform env vars like Render)
     if(process.env.ANTHROPIC_API_KEY)CONFIG.ANTHROPIC_API_KEY=process.env.ANTHROPIC_API_KEY;
     if(process.env.ACCESS_PIN)CONFIG.ACCESS_PIN=process.env.ACCESS_PIN;
     if(process.env.SMTP_HOST)CONFIG.SMTP_HOST=process.env.SMTP_HOST;
