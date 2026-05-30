@@ -3,14 +3,18 @@ services:
     name: jobhunter-ai
     runtime: node
     plan: starter          # "free" hat keinen Persistent Disk – starter = ~$7/Monat
-    buildCommand: npm install
+    buildCommand: PUPPETEER_SKIP_DOWNLOAD=true npm install
     startCommand: node server.js
     healthCheckPath: /api/status
 
     envVars:
       # -- Node-Version (node:sqlite braucht >= 22.5) --
       - key: NODE_VERSION
-        value: 22.5.0
+        value: 22.11.0
+
+      # -- Puppeteer: Browser-Binary auf Render nicht herunterladen (spart Fehler/Zeit) --
+      - key: PUPPETEER_SKIP_DOWNLOAD
+        value: "true"
 
       # -- Datenpfad (Persistent Disk Mount) --
       - key: DATA_DIR
