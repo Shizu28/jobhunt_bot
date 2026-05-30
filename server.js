@@ -349,7 +349,7 @@ async function scrapeStepstone(kw, sc) {
     const pp=getPuppeteer();
     let browser=null;
     try {
-      browser=await pp.launch({headless:true,args:['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-blink-features=AutomationControlled'],timeout:30000});
+      browser=await pp.launch(getBrowserLaunchOpts({headless:true,args:['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-blink-features=AutomationControlled'],timeout:30000}));
       const page=await browser.newPage();
       await page.setUserAgent(randUA());
       await page.setExtraHTTPHeaders({'Accept-Language':'de-DE,de;q=0.9'});
@@ -744,6 +744,11 @@ function getPuppeteer() {
   }
   return _puppeteer;
 }
+// Returns launch options merged with system executablePath when PUPPETEER_EXECUTABLE_PATH is set (e.g. on Render)
+function getBrowserLaunchOpts(opts = {}) {
+  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+  return executablePath ? { executablePath, ...opts } : opts;
+}
 
 const autoSessions = new Map();
 
@@ -821,7 +826,7 @@ async function generateLetterPDF(letter, profile, job) {
 
   let b2 = null;
   try {
-    b2 = await pp.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] });
+    b2 = await pp.launch(getBrowserLaunchOpts({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] }));
     const p2 = await b2.newPage();
     await p2.setContent(html, { waitUntil: 'networkidle0', timeout: 15000 });
     await p2.pdf({ path: pdfPath, format: 'A4', printBackground: true,
@@ -1310,12 +1315,12 @@ async function autoBrowserApply(jobId) {
       session.steps.push('Oeffne Browser...');
       const browserProfileDir = path.join(__dirname, 'browser-profile');
       if (!fs.existsSync(browserProfileDir)) fs.mkdirSync(browserProfileDir, { recursive: true });
-      const browser = await pp.launch({
+      const browser = await pp.launch(getBrowserLaunchOpts({
         headless: false, defaultViewport: null,
         userDataDir: browserProfileDir,
         args: ['--start-maximized','--no-sandbox','--disable-blink-features=AutomationControlled'],
         ignoreDefaultArgs: ['--enable-automation'],
-      });
+      }));
       session.browser = browser;
       const pages = await browser.pages();
       const page = pages[0] || await browser.newPage();
@@ -2853,12 +2858,12 @@ const server=http.createServer(async(req,res)=>{
       const pp = getPuppeteer();
       const browserProfileDir = path.join(__dirname, 'browser-profile');
       if (!fs.existsSync(browserProfileDir)) fs.mkdirSync(browserProfileDir, { recursive: true });
-      const browser = await pp.launch({
+      const browser = await pp.launch(getBrowserLaunchOpts({
         headless: false, defaultViewport: null,
         userDataDir: browserProfileDir,
         args: ['--start-maximized','--no-sandbox','--disable-blink-features=AutomationControlled'],
         ignoreDefaultArgs: ['--enable-automation'],
-      });
+      }));
       const pages = await browser.pages();
       const page = pages[0] || await browser.newPage();
       await page.goto('https://www.linkedin.com/login', { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(()=>{});
@@ -2964,12 +2969,12 @@ const server=http.createServer(async(req,res)=>{
         const pp = getPuppeteer();
         // Close old browser if still alive
         if (s.browser) { try { await s.browser.close(); } catch(e) {} s.browser = null; s.page = null; }
-        const browser = await pp.launch({
+        const browser = await pp.launch(getBrowserLaunchOpts({
           headless: false, defaultViewport: null,
           userDataDir: path.join(__dirname, 'browser-profile'),
           args: ['--start-maximized','--no-sandbox','--disable-blink-features=AutomationControlled'],
           ignoreDefaultArgs: ['--enable-automation'],
-        });
+        }));
         const pages = await browser.pages();
         const page = pages[0] || await browser.newPage();
         await page.evaluateOnNewDocument(() => {
