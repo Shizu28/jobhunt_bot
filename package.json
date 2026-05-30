@@ -11,7 +11,7 @@
     "puppeteer": "^22.0.0"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": "22.x"
   },
   "devDependencies": {
     "playwright": "^1.60.0"
