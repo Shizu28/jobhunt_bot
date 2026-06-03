@@ -99,8 +99,9 @@ const DEFAULT_SEARCH = {
   want_remote: true,
   want_local: true,
   want_car: true,
-  sources: { aa: true, stepstone: true, linkedin: true, xing: false, heise: true, google: true, remotive: true, arbeitnow: true },
+  sources: { aa: true, stepstone: true, linkedin: true, xing: false, heise: true, google: true, remotive: true, arbeitnow: true, google_jobs: true, instaffo: true },
   custom_sources: [],
+  instaffo_url: 'https://app.instaffo.com/candidate/job_suggestions/?uuid=f3719eca-0509-4762-b63d-3b9add332159',
 };
 
 // -- AUTH (PIN) ------------------------------------------------------------
@@ -1906,6 +1907,123 @@ function dedup(existing, incoming) {
   return result;
 }
 
+// -- GOOGLE JOBS (udm=8 – Google Jobs Vertical) --------------------------
+async function scrapeGoogleJobs(kw, sc) {
+  const jobs = [];
+  try {
+    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(kw)}&udm=8&hl=de&gl=de&num=20`;
+    const res = await fetchUrl(searchUrl, {
+      timeout: 20000,
+      headers: {
+        'User-Agent': randUA(),
+        'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+        'Accept-Language': 'de-DE,de;q=0.9',
+        'Referer': 'https://www.google.com/',
+        'Sec-Fetch-Dest': 'document', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Site': 'none',
+      },
+    }).catch(() => null);
+    if (!res || res.status !== 200) { console.log(`  GoogleJobs(${kw}): HTTP ${res?.status||'err'}`); return jobs; }
+    for (const m of res.body.matchAll(/<script type=["']application\/ld\+json["']>([\s\S]*?)<\/script>/g)) {
+      try {
+        const d = JSON.parse(m[1]);
+        for (const item of (Array.isArray(d) ? d : [d])) {
+          if (item['@type'] !== 'JobPosting') continue;
+          const loc = item.jobLocation?.address?.addressLocality || '';
+          const isRemote = item.jobLocationType === 'TELECOMMUTE' || /remote|homeoffice/i.test(loc + ' ' + item.title);
+          const desc = (item.description || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 350);
+          jobs.push({
+            id: 'gj_' + Buffer.from((item.url || item.sameAs || '') + (item.datePosted || '')).toString('base64').slice(0, 12),
+            title: item.title || kw,
+            company: item.hiringOrganization?.name || 'Unbekannt',
+            location: isRemote ? 'Remote' : (loc || 'Deutschland'),
+            remote: isRemote, local: !isRemote, car: false,
+            salary: item.baseSalary?.value?.value ? String(item.baseSalary.value.value) : null,
+            posted: item.datePosted || new Date().toISOString().split('T')[0],
+            keywords: extractKw(item.title + ' ' + desc.slice(0, 200)),
+            desc: desc || `${item.title} (Google Jobs)`,
+            url: item.url || item.sameAs || searchUrl,
+            source: 'Google Jobs', status: 'new', match: 0, scrapedAt: new Date().toISOString(),
+          });
+          if (jobs.length >= 15) break;
+        }
+      } catch(e) {}
+      if (jobs.length >= 15) break;
+    }
+    console.log(`  GoogleJobs(${kw}): ${jobs.length}`);
+  } catch(e) { console.log(`  GoogleJobs(${kw}): ${e.message}`); }
+  return jobs;
+}
+
+// -- INSTAFFO (personalisierte Job-Vorschläge, einmalig pro Scan) --------
+async function scrapeInstaffo(sc) {
+  const jobs = [];
+  const url = sc.instaffo_url || '';
+  if (!url) return jobs;
+  try {
+    const pp = getPuppeteer();
+    let browser = null;
+    try {
+      browser = await pp.launch(getBrowserLaunchOpts({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        timeout: 30000,
+      }));
+      const page = await browser.newPage();
+      await page.setUserAgent(randUA());
+      await page.setViewport({ width: 1280, height: 900 });
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 }).catch(() =>
+        page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 })
+      );
+      await sleep(3000); // React hydration
+      const jobData = await page.evaluate(() => {
+        const results = [];
+        const seen = new Set();
+        const candidates = [
+          ...document.querySelectorAll('[class*="JobCard"], [class*="job-card"], [class*="SuggestionCard"], [class*="suggestion-card"]'),
+          ...document.querySelectorAll('article'),
+          ...document.querySelectorAll('[data-testid*="job"]'),
+        ].filter((el, i, arr) => arr.indexOf(el) === i && el.querySelector('a'));
+        for (const card of candidates.slice(0, 30)) {
+          const titleEl = card.querySelector('h2, h3, [class*="title" i], [class*="Title"]');
+          const companyEl = card.querySelector('[class*="company" i], [class*="employer" i]');
+          const locationEl = card.querySelector('[class*="location" i], [class*="city" i]');
+          const linkEl = card.querySelector('a[href]');
+          const title = titleEl?.textContent?.trim();
+          if (!title || title.length < 3) continue;
+          if (seen.has(title)) continue; seen.add(title);
+          const rawHref = linkEl?.getAttribute('href') || '';
+          const href = rawHref.startsWith('http') ? rawHref : (rawHref ? 'https://app.instaffo.com' + rawHref : '');
+          results.push({
+            title,
+            company: companyEl?.textContent?.trim() || 'Unbekannt',
+            location: locationEl?.textContent?.trim() || '',
+            href,
+          });
+        }
+        return results;
+      });
+      for (const j of jobData) {
+        const isRemote = /remote|homeoffice/i.test(j.location + ' ' + j.title);
+        jobs.push({
+          id: 'if_' + Buffer.from((j.href || j.title) + j.company).toString('base64').slice(0, 12),
+          title: j.title,
+          company: j.company,
+          location: isRemote ? 'Remote' : (j.location || 'Deutschland'),
+          remote: isRemote, local: !isRemote, car: false,
+          salary: null,
+          posted: new Date().toISOString().split('T')[0],
+          keywords: extractKw(j.title),
+          desc: `${j.title} bei ${j.company}`,
+          url: j.href || url,
+          source: 'Instaffo', status: 'new', match: 0, scrapedAt: new Date().toISOString(),
+        });
+      }
+      console.log(`  Instaffo: ${jobs.length}`);
+    } finally { if (browser) await browser.close().catch(() => {}); }
+  } catch(e) { console.log(`  Instaffo: ${e.message}`); }
+  return jobs;
+}
+
 async function runScan() {
   const sc=loadSearch(), data=loadJobs(), profile=loadProfile(), allNew=[];
   // Profile is ALWAYS the source of truth for location/radius/preferences
@@ -1916,14 +2034,14 @@ async function runScan() {
   sc.want_local  = profile.want_local;
   sc.want_car    = profile.want_car;
   // Apply defaults for sources not in saved config (migration for old configs)
-  const srcDefaults={aa:true,stepstone:true,linkedin:true,xing:false,heise:true,google:true,remotive:true,arbeitnow:true};
+  const srcDefaults={aa:true,stepstone:true,linkedin:true,xing:false,heise:true,google:true,remotive:true,arbeitnow:true,google_jobs:true,instaffo:true};
   const savedSrc=sc.sources||{};
   // If config was saved before new sources existed (no remotive/arbeitnow key) ? legacy config, use all defaults
   const isLegacyConfig=savedSrc.remotive===undefined&&savedSrc.arbeitnow===undefined;
   const src=isLegacyConfig?{...srcDefaults}:{...srcDefaults,...savedSrc};
   console.log(`  Standort: ${sc.location} ï¿½ Radius lokal: ${sc.radius_km} km ï¿½ Dienstwagen: ${sc.radius_car_km} km`);
   console.log(`\n${'='.repeat(52)}\n?? Scan: ${new Date().toLocaleString('de-DE')} ï¿½ ${sc.keywords.length} Keywords\n${'='.repeat(52)}`);
-  const active=[src.aa!==false&&'AA',src.indeed!==false&&'Indeed',src.stepstone!==false&&'StepStone',src.linkedin&&'LinkedIn',src.xing&&'Xing',src.heise!==false&&'Heise',src.google!==false&&'Bing',src.remotive!==false&&'Remotive',src.arbeitnow!==false&&'Arbeitnow'].filter(Boolean);
+  const active=[src.aa!==false&&'AA',src.indeed!==false&&'Indeed',src.stepstone!==false&&'StepStone',src.linkedin&&'LinkedIn',src.xing&&'Xing',src.heise!==false&&'Heise',src.google!==false&&'Bing',src.remotive!==false&&'Remotive',src.arbeitnow!==false&&'Arbeitnow',src.google_jobs!==false&&'Google Jobs',src.instaffo!==false&&sc.instaffo_url&&'Instaffo'].filter(Boolean);
   console.log(`  Quellen: ${active.join(', ')}`);
   for (const kw of sc.keywords) {
     console.log(`\n  "${kw}"`);
@@ -1934,11 +2052,18 @@ async function runScan() {
     if (src.heise!==false){scanStep=`"${kw}" Â· Heise`;const hi=await scrapeHeise(kw,sc);console.log(`    Heise: ${hi.length}`);allNew.push(...hi);await sleep(1200);}
     if (src.google!==false){scanStep=`"${kw}" Â· Bing`;const go=await scrapeBing(kw,sc);console.log(`    Bing: ${go.length}`);allNew.push(...go);await sleep(2000);}
     if (src.remotive!==false){scanStep=`"${kw}" Â· Remotive`;const rm=await scrapeRemotive(kw,sc);console.log(`    Remotive: ${rm.length}`);allNew.push(...rm);await sleep(1000);}
-    if (src.arbeitnow!==false){scanStep=`"${kw}" Â· Arbeitnow`;const an=await scrapeArbeitnow(kw,sc);console.log(`    Arbeitnow: ${an.length}`);allNew.push(...an);await sleep(1000);}
+    if (src.arbeitnow!==false){scanStep=`"${kw}" · Arbeitnow`;const an=await scrapeArbeitnow(kw,sc);console.log(`    Arbeitnow: ${an.length}`);allNew.push(...an);await sleep(1000);}
+    if (src.google_jobs!==false){scanStep=`"${kw}" · Google Jobs`;const gj=await scrapeGoogleJobs(kw,sc);console.log(`    Google Jobs: ${gj.length}`);allNew.push(...gj);await sleep(1500);}
+  }
+  // Instaffo: einmalig pro Scan (nicht pro Keyword)
+  if (src.instaffo!==false && sc.instaffo_url) {
+    scanStep='Instaffo';
+    const inf=await scrapeInstaffo(sc);
+    allNew.push(...inf);
   }
   // Normalize local flag: skip radius-filtering sources (AA, StepStone already correct)
   // Only check city-match for sources that return nationwide results
-  const noRadiusSources = ['LinkedIn', 'Heise Jobs', 'Arbeitnow', 'Remotive', 'Bing', 'Xing', 'Google'];
+  const noRadiusSources = ['LinkedIn', 'Heise Jobs', 'Arbeitnow', 'Remotive', 'Bing', 'Xing', 'Google', 'Google Jobs', 'Instaffo'];
   const userCityLow=(sc.location||'').toLowerCase().split(',')[0].trim();
   if (userCityLow) {
     for (const job of allNew) {
@@ -2132,7 +2257,7 @@ Job description: ${(job.desc||'').slice(0,800)}
 Keywords to include naturally: ${(job.keywords||[]).slice(0,5).join(', ')}
 
 APPLICANT:
-Name: ${profile.name||'Applicant'}
+Name: ${profile.name||'[Your Name]'}
 Skills: ${profile.skills||'Software Development'}
 Experience: ${profile.experience||''}
 ${eduEN ? 'Education: '+eduEN : ''}
@@ -2147,7 +2272,7 @@ Line 2: blank
 Line 3: Salutation like "Hello," or "Dear Hiring Team,"
 Line 4: blank
 Lines 5+: Three paragraphs separated by blank lines
-Last line: "Best regards," then next line the applicant name${feedback ? `\n\nSPECIAL INSTRUCTION FOR THIS VERSION: ${feedback}` : ''}`;
+Last line: "Best regards," then next line the applicant's full name (NOT "Applicant", NOT a placeholder — use the name from APPLICANT section above)${feedback ? `\n\nSPECIAL INSTRUCTION FOR THIS VERSION: ${feedback}` : ''}`;
 
   } else {
     prompt = `Du bist ein professioneller Bewerbungsschreiber. Schreibe ein Anschreiben für folgende Stelle.
@@ -2171,7 +2296,7 @@ Stellenbeschreibung: ${(job.desc||'').slice(0,800)}
 Keywords natürlich einbauen: ${(job.keywords||[]).slice(0,5).join(', ')}
 
 BEWERBER:
-Name: ${profile.name||'Bewerber'}
+Name: ${profile.name||'[Name]'}
 Skills: ${profile.skills||'Softwareentwicklung'}
 Erfahrung: ${profile.experience||''}
 ${eduDE ? 'Ausbildung: '+eduDE : ''}
@@ -2186,7 +2311,7 @@ Zeile 2: leer
 Zeile 3: Anrede wie "Hallo," oder "Sehr geehrte Damen und Herren,"
 Zeile 4: leer
 Zeilen 5+: Drei Absätze, durch Leerzeile getrennt
-Letzte Zeile: "Mit freundlichen Grüßen," dann nächste Zeile der Name des Bewerbers${feedback ? `
+Letzte Zeile: "Mit freundlichen Grüßen," dann nächste Zeile der vollständige Name des Bewerbers (NICHT "Bewerber", NICHT "Applicant", NICHT ein Platzhalter — verwende den Namen aus dem BEWERBER-Abschnitt oben)${feedback ? `
 
 BESONDERE ANWEISUNG FÜR DIESE VERSION: ${feedback}` : ''}`;
   }
@@ -2197,7 +2322,16 @@ BESONDERE ANWEISUNG FÜR DIESE VERSION: ${feedback}` : ''}`;
     ? (await callOllama([{ role: 'system', content: sysLang }, { role: 'user', content: prompt }], 1500, CONFIG.OLLAMA_LETTER_MODEL || CONFIG.OLLAMA_MODEL, true)).replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
     : await callAnthropic([{ role: 'user', content: prompt }], 1500, 'Anschreiben', MODELS.coverLetter);
   // Strip any markdown bold/italic markers and dashes the AI added despite instructions
-  return raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').replace(/\u2014/g, ',').replace(/\u2013/g, ',').trim();
+  let letter = raw.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1').replace(/\u2014/g, ',').replace(/\u2013/g, ',').trim();
+  // Post-process: replace generic fallback signatures with the actual name
+  if (profile.name) {
+    letter = letter
+      .replace(/(\n|\r\n?)Bewerber\s*$/i, '$1' + profile.name)
+      .replace(/(\n|\r\n?)Applicant\s*$/i, '$1' + profile.name)
+      .replace(/(\n|\r\n?)\[Name\]\s*$/i, '$1' + profile.name)
+      .replace(/(\n|\r\n?)\[Your Name\]\s*$/i, '$1' + profile.name);
+  }
+  return letter;
 }
 
 // Detect language from job text (simple word-frequency approach)

@@ -3,7 +3,7 @@ services:
     name: jobhunter-ai
     runtime: node
     plan: starter          # "free" hat keinen Persistent Disk – starter = ~$7/Monat
-    buildCommand: apt-get install -y chromium && PUPPETEER_SKIP_DOWNLOAD=true npm install
+    buildCommand: npm install && npx puppeteer browsers install chrome
     startCommand: node server.js
     healthCheckPath: /api/status
 
@@ -11,12 +11,6 @@ services:
       # -- Node-Version (node:sqlite braucht >= 22.5) --
       - key: NODE_VERSION
         value: 22.11.0
-
-      # -- Puppeteer: kein Chromium-Download via npm, stattdessen System-Chromium via apt --
-      - key: PUPPETEER_SKIP_DOWNLOAD
-        value: "true"
-      - key: PUPPETEER_EXECUTABLE_PATH
-        value: /usr/bin/chromium
 
       # -- Datenpfad (Persistent Disk Mount) --
       - key: DATA_DIR
